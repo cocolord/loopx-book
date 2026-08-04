@@ -20,6 +20,8 @@
 完成首版后，读者应能：
 
 - 解释 LoopX 与 Agent runtime 的职责边界；
+- 解释普通 Agent 会话、Codex Goal 与 LoopX control plane 逐层解决了什么问题，
+  并判断一个任务停在哪一层已经足够；
 - 使用 Goal、Todo、Gate、Evidence、Quota、Turn 和 Projection 判断一个长程任务的状态；
 - 从 Codex App 或 Codex CLI 可见 TUI 把现有 Git 项目接入 LoopX；
 - 确认项目连接、状态隔离、下一步工作和恢复路径；
@@ -32,14 +34,72 @@
 
 ### 第一部分：建立控制面心智模型
 
-这部分只讲后续实践依赖的理论：
+这部分为后续实践建立较完整的理论基础，不把读者直接送进命令清单。建议拆成四章。
 
-- 为什么一次 Agent 会话不足以承载长程任务；
-- Goal、Todo、Gate、Evidence、Quota、Turn 和 Projection 如何组成一轮；
+#### 第一章：从一次 Agent 会话到长程任务
+
+- 模型上下文为什么更适合作为工作内存，而不是长期事实源；
+- session 结束、上下文压缩、模型切换、Agent 交接和外部事实变化分别会破坏什么；
+- execution plane 与 control plane 的区别；
+- 哪些信息必须外置，哪些临时推理可以随 Turn 结束而丢弃。
+
+#### 第二章：普通会话、Codex Goal 与 LoopX
+
+这一章不是竞品式功能表，而是解释控制信息如何逐层外置：
+
+| 层次 | 主要拥有的状态 | 解决的问题 | LoopX 继续补充的部分 |
+| --- | --- | --- | --- |
+| 普通 Agent 会话 | 当前 transcript、工具结果和本轮计划 | 完成一次上下文内的推理与执行 | session 之外的目标连续性、工作身份和恢复 |
+| Codex Goal | thread 上持久的 objective、goal lifecycle 与可选 budget | 让 Host 围绕同一目标继续 Turn，并判断 active、paused、budget-limited 或 complete | 项目级 Todo/claim、scoped gate、外部 effect receipt、跨 Agent/Host 状态和领域 lifecycle |
+| LoopX control plane | 项目拥有的 canonical state，以及由它编译出的当前 Turn packet | 组织跨 session、Agent、Host 和外部系统的可审计生命周期 | 不替代模型推理、Host 执行或外部系统本身的事实权威 |
+
+比较必须落到可观察行为，而不是抽象口号：
+
+- **目标归属：** Codex Goal 让 objective 脱离一次 prompt；LoopX 再把项目级
+  acceptance、boundary 和当前 frontier 放进可恢复状态。
+- **工作结构：** Codex Goal 可以围绕目标继续执行；LoopX 把 Todo、claim、lease、
+  dependency、successor 和 handoff 变成有身份的项目对象。
+- **人类判断：** 普通对话可以提问；LoopX 把具体问题绑定到 scope 和 authority，
+  区分 user action、blocking gate 与不依赖该 gate 的 safe fallback。
+- **证据与外部动作：** 工具调用结果可以出现在 Turn 中；LoopX 区分 proposal、
+  observation、validated evidence、effect readback 和 durable receipt，避免“尝试过”
+  被当成“已经发生并被接受”。
+- **时间与调度：** Host 可以继续或再次启动 Turn；LoopX 把 `should-run`、monitor、
+  scheduler hint、backoff 和 spend 变成可重放的项目控制事实。
+- **跨 Agent 与跨 Host：** Codex Goal 首先服务于其 thread/Host 的目标生命周期；
+  LoopX 用项目状态让 Codex App、Codex CLI 和其他 Agent surface 读取同一份工作边界，
+  但不让任一 Host 成为第二事实源。
+- **恢复与领域状态：** LoopX 通过 event、lineage、projection、replan 和 self-repair
+  支持失败恢复，并允许 Issue Fix 等领域增加 Domain State，而不复制 Kernel。
+
+本章还要明确两个边界：
+
+1. LoopX 可以与 Codex Goal 组合，Host 继续负责唤醒和执行当前 Turn；二者不是只能选一个；
+2. 只把 `/goal` 字样写进普通 prompt，不等于已经建立了 Host 可读回的持久 Goal，
+   具体行为必须以目标 Codex 版本的公开界面为准。
+
+为了避免随 Host 演进而失真，书中只保留稳定的概念差异。Codex Goal 的命令、字段和
+生命周期细节在 Labs 验证目标版本后展示，并指向对应的官方来源。
+
+#### 第三章：LoopX 的核心对象如何组成一轮
+
+- Goal、Vision 与 Acceptance 如何保持方向；
+- Todo、Frontier、Claim、Lease 与 Gate 如何限定当前合法动作；
+- Evidence、Receipt 与 Projection 为什么不是同一层事实；
+- Quota、Turn、Monitor、Replan 与 Terminal audit 如何决定继续、等待或结束；
+- 用同一个小型项目分别展示普通会话、Codex Goal 和 LoopX 的状态快照，让读者预测
+  session 中断、用户插入决定和外部检查等待时会发生什么。
+
+#### 第四章：运行责任与扩展边界
+
 - Agent、Provider、Capability、Kernel 与 Extension 的职责；
-- canonical state、外部事实源和 public/private boundary。
+- canonical state、外部事实源和 public/private boundary；
+- 为什么 Extension 是交付和生命周期边界，不是第五种 runtime responsibility；
+- 为什么 LoopX 不替代 Agent runtime、Git、CI 或领域系统。
 
-理论必须用可检查的小场景落地，不展开 Kernel 代码演进史。
+理论必须用可检查的小场景、状态快照和反例落地，不展开 Kernel 代码演进史。第一部分结束时，
+读者应能判断：短而封闭的任务何时只用普通会话，单一 Host 内的持续目标何时可由 Codex Goal
+承担，以及何时需要 LoopX 的项目级 Todo、权限、证据、调度或跨 Host 恢复。
 
 ### 第二部分：把现有项目接入 LoopX
 
@@ -135,6 +195,9 @@ Labs 使用自动化 smoke 检查命令、链接和预期结构，不能依赖�
 
 - 首页在第一屏说明读者、两条路径和当前范围；
 - 中文正文占主导，代码与必要术语保持英文；
+- 第一部分能用同一任务对比普通会话、Codex Goal 与 LoopX，并说明三者可以组合而不是互斥；
+- 读者能从 Todo/claim、gate/authority、evidence/receipt、scheduler/recovery 和跨 Host
+  五个维度指出 LoopX 相对原生 Goal 新增的项目级控制合同；
 - `npm run docs:build` 成功；
 - 内部链接通过检查；
 - 每条高影响命令均在目标 LoopX release 上验证或明确标注未执行。

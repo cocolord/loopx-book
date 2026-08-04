@@ -191,4 +191,3 @@ loopx check \
 
 完成这些检查后，GitHub Pages workflow 才应从 `main` 发布站点。Pages 是展示面，不是内容或
 LoopX 状态的事实源。
-

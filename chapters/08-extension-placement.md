@@ -92,17 +92,23 @@ connector 仍可能是 built-in Provider。
 
 在创建目录前回答：
 
-1. **用户结果是什么？**  
+1. **用户结果是什么？**
+
    不要用 `connector`、`adapter`、`sink` 这类实现机制代替结果名称。
-2. **最近的现有 owner 能否拥有它？**  
+2. **最近的现有 owner 能否拥有它？**
+
    如果现有 Capability 已经定义相同结果，扩展它。
-3. **LoopX core 是否必须始终发布这个实现？**  
+3. **LoopX core 是否必须始终发布这个实现？**
+
    是则考虑 built-in；否则考虑 Extension。
-4. **是否需要独立生命周期？**  
+4. **是否需要独立生命周期？**
+
    独立依赖、版本、启停、凭据或 provider ownership 通常指向 Extension。
-5. **是否只是内部 helper？**  
+5. **是否只是内部 helper？**
+
    没有独立调用合同就留在 owning module。
-6. **是否有权限或外部 effect？**  
+6. **是否有权限或外部 effect？**
+
    有则不能通过 generic standalone runner 绕过 Capability/domain policy。
 
 ## 记录最小 rationale

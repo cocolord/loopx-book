@@ -143,4 +143,3 @@ loopx start-goal --guided --project . \
 
 确认 Gate scope。只阻塞一个 Todo 的决定不应冻结其他 safe frontier。若 Gate 过宽，先修复项目
 状态，而不是在 prompt 中要求 Agent 忽略它。
-

@@ -226,4 +226,3 @@ scope 变宽、request 改变或 revision 不匹配都必须 fail closed。
 | rollback 不可用 | 是否存在 validated previous revision |
 
 生命周期失败时修复 contract 或环境，不要绕过 managed runtime 直接把 provider 当作已激活。
-

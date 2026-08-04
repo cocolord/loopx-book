@@ -170,4 +170,3 @@ LoopX control plane -> Codex Goal continuation -> Agent Turn
 | 有项目 Todo、权限 Gate、外部 effect、跨 Agent/Host 或调度恢复 | LoopX，可与 Codex Goal 组合 |
 
 选择最小足够层次。控制面本身也有维护成本；没有项目级问题时，不要为了“更 Agentic”而制造状态。
-

@@ -151,4 +151,3 @@ canonical state + current external observations
 
 它便能判断：是继续写文档、等待维护者，还是因 evidence 已过期而重跑验证。这就是 Turn packet
 的价值：恢复的是行动条件，不是上一轮的全部思维过程。
-

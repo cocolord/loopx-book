@@ -127,4 +127,3 @@ Host 的 Goal resume 表面恢复，而不是反复重发完整任务。
 
 检查 claim、lease 与 scheduler ownership。两种 Host 可以读同一 Goal，但同一个有副作用的 Todo
 只能有一个合法执行者。
-

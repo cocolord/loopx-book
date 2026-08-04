@@ -226,4 +226,3 @@ Capability/domain command。
 
 一旦有 permission，`extension run` 会拒绝直接调用。先确定真实 Capability 和 authority，再设计
 effectful provider，不要为了展示 manifest 字段制造假的权限合同。
-

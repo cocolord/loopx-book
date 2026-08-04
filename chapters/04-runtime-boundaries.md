@@ -122,4 +122,3 @@ LoopX 不替代：
 
 这个边界也是 Extension 设计的起点。第三部分会先判断一项能力是否真的需要独立生命周期，再决定
 它应成为 standalone Extension、Capability provider，还是留在项目内部。
-

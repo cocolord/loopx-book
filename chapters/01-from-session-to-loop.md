@@ -141,4 +141,3 @@ next_wake:
 - 需要从另一个 Host 或 Agent 恢复。
 
 下一章会进一步区分：普通会话、Codex Goal 与 LoopX 分别把哪些控制信息移出了当前 prompt。
-

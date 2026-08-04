@@ -1,0 +1,22 @@
+{
+  "name": "loopx-book",
+  "version": "0.1.0",
+  "private": true,
+  "description": "面向外部开发者的 LoopX 中文教程",
+  "type": "module",
+  "scripts": {
+    "docs:dev": "vitepress dev",
+    "docs:build": "vitepress build",
+    "docs:preview": "vitepress preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cocolord/loopx-book.git"
+  },
+  "devDependencies": {
+    "vitepress": "^1.6.4"
+  },
+  "overrides": {
+    "vite": "6.4.3"
+  }
+}

@@ -7,10 +7,12 @@ on:
       - '.github/workflows/**'
       - '.vitepress/**'
       - 'chapters/**'
+      - 'en/**'
       - 'README.md'
       - 'index.md'
       - 'package.json'
       - 'package-lock.json'
+      - 'scripts/**'
   workflow_dispatch:
 
 permissions:
@@ -43,6 +45,12 @@ jobs:
 
       - name: Build
         run: npm run docs:build
+
+      - name: Check publication
+        run: npm run check:publication
+
+      - name: Check hydrated publication
+        run: npm run check:publication:browser
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4

@@ -43,6 +43,33 @@ const locales = [
       'capability_id',
       '不自动拉取行情',
     ],
+    sourceGroundedChapterMarkers: {
+      '02-session-goal-loopx': [
+        '任务资格卡',
+        'Host 兼容矩阵',
+        'same task semantics',
+      ],
+      'state-substrate': [
+        '存储介质不是 authority contract',
+        '本地优先',
+        'Draft',
+      ],
+      'work-graph-and-authority': [
+        '多仓库与并行协作',
+        'task_repository',
+        '不授予写权限',
+      ],
+      '05-connect-existing-project': [
+        '发现 Capability 与可选功能',
+        'loopx capability list',
+        'configure-goal --goal-id',
+      ],
+      'appendix-reference': [
+        '安全升级 runbook',
+        'loopx update --check',
+        'loopx update --dry-run',
+      ],
+    },
   },
   {
     name: 'English',
@@ -63,6 +90,33 @@ const locales = [
       'capability_id',
       'does not fetch market data',
     ],
+    sourceGroundedChapterMarkers: {
+      '02-session-goal-loopx': [
+        'Task qualification card',
+        'Host compatibility matrix',
+        'same task semantics',
+      ],
+      'state-substrate': [
+        'Storage medium is not the authority contract',
+        'local-first',
+        'Draft',
+      ],
+      'work-graph-and-authority': [
+        'Multi-repository and parallel work',
+        'task_repository',
+        'does not grant write authority',
+      ],
+      '05-connect-existing-project': [
+        'Discover Capabilities and optional features',
+        'loopx capability list',
+        'configure-goal --goal-id',
+      ],
+      'appendix-reference': [
+        'Safe upgrade runbook',
+        'loopx update --check',
+        'loopx update --dry-run',
+      ],
+    },
   },
 ]
 
@@ -208,6 +262,13 @@ for (const locale of locales) {
           `${pageLabel} 缺少财经发现 placement 标记 ${marker}`,
         )
       }
+    }
+
+    for (const marker of locale.sourceGroundedChapterMarkers[slug] ?? []) {
+      expect(
+        html.includes(marker),
+        `${pageLabel} 缺少源码事实标记 ${marker}`,
+      )
     }
 
     const previous = chapters[index - 1]

@@ -1,7 +1,7 @@
 # 从一次会话到长程任务
 
 一个 Agent 能在当前会话里修改代码、运行测试并解释结果，不代表它能可靠地拥有一项持续数天的
-工作。本章先区分工作内存与项目事实，再说明 control plane 为什么存在。
+工作。本章先区分 session context 与 project memory，再说明 control plane 为什么存在。
 
 ## 本章目标
 
@@ -10,6 +10,7 @@
 - 指出哪些状态不能只留在 transcript 中；
 - 区分 execution plane 与 control plane；
 - 为一个会跨 session 的任务列出最小外置状态；
+- 区分 durable project fact 与必须重新探测的 environment fact；
 - 判断一个任务是否仍适合只用普通 Agent 会话。
 
 ## 贯穿全书的任务
@@ -27,7 +28,7 @@
 第三步之后中断：上下文被压缩，CI 要等待，维护者隔天回复，另一个 Agent 接手，或者外部依赖
 改变。此时“模型还记得什么”与“项目现在是什么状态”开始分离。
 
-## 上下文是工作内存，不是账本
+## Session context 是工作内存，不是账本
 
 模型上下文适合承载：
 
@@ -57,18 +58,28 @@
 | 工具超时 | “发起了动作”等于“动作已完成” |
 
 长程工作需要把恢复所需的最小事实外置。外置不等于保存整段对话，而是保存可供下一轮重新推导
-行动的 canonical state（规范状态）。
+行动的 durable project facts。恢复时还必须重新探测 checkout、Host capability 和外部服务，
+因为环境事实可能在两轮之间改变：
+
+```text
+next decision =
+  replay(durable project facts)
+  + inspect(fresh environment)
+```
+
+Canonical state（规范状态）只拥有 LoopX 生命周期事实。Git commit、CI check 和外部资源状态仍由
+对应系统拥有，LoopX 保存的是 bounded readback、revision 与 evidence pointer。
 
 ## Execution plane 与 control plane
 
-**Execution plane（执行面）**负责执行一个有界动作，例如：
+**Execution plane（执行面）** 负责执行一个有界动作，例如：
 
 - Agent 修改代码；
 - shell 运行测试；
 - provider 调用 GitHub；
 - Host 启动下一次模型 Turn。
 
-**Control plane（控制面）**负责决定什么动作现在合法、为什么继续、何时等待，以及结果如何进入
+**Control plane（控制面）** 负责决定什么动作现在合法、为什么继续、何时等待，以及结果如何进入
 持久状态：
 
 - 目标和验收是否仍然有效；
@@ -115,8 +126,9 @@ next_wake:
   when: maintainer decision arrives
 ```
 
-这些字段的价值在于：下一位执行者不必相信前一位 Agent 的自述，而能从目标、工作队列、Gate
-和证据重新判断下一步。
+这些字段的价值在于：下一位执行者不必相信前一位 Agent 的自述，而能从目标、工作队列、Gate、
+证据和 fresh environment 重新判断下一步。示例是解释模型，不是 LoopX 的存储格式；第三章会
+说明这些信息分别属于哪些协议与状态表面。
 
 ## 什么时候普通会话已经足够
 

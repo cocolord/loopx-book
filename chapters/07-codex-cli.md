@@ -78,6 +78,7 @@ loopx status --goal-id <goal-id>
 loopx history --goal-id <goal-id> --limit 10
 loopx quota should-run \
   --goal-id <goal-id> \
+  --agent-id <agent-id> \
   --runtime-profile codex_cli
 ```
 
@@ -86,8 +87,10 @@ heartbeat。若 packet 报告 scheduler context 缺失，先修复 runtime profi
 
 ## 5. 保持身份与 Todo 归属
 
-在单 Agent Goal 中，LoopX 可以自动选择唯一注册身份。多 Agent Goal 必须显式选择 `agent_id`；
-否则应返回 identity selection Gate。
+新的 argument-bearing guided start 默认要求 fresh Agent identity，即使 Goal 中只有一个已注册身份。
+已有 id 只在用户明确要求 takeover 那个 peer 时复用。完成选择后，visible Goal、quota、refresh 与
+writeback 都应显式保留同一个 `--agent-id`；缺失或不匹配时应 fail closed，而不是回退到“唯一
+身份”。
 
 Agent identity 表达 LoopX 工作 lane，不证明具体 Host。判断工作是否真的在 Codex CLI 运行，要看
 `host_surface`、runtime profile 或对应 run metadata。
@@ -96,7 +99,7 @@ Agent identity 表达 LoopX 工作 lane，不证明具体 Host。判断工作是
 
 1. 当前 Agent 写回验证结果；
 2. 更新或完成 Todo；
-3. 新 Agent 注册身份；
+3. 新 Agent 以 fresh id 预览并完成原子注册；
 4. 新 Agent claim 未完成 Todo；
 5. 新 Host 读取同一 registry 与 Goal；
 6. 再启动 visible Goal。
@@ -127,3 +130,18 @@ Host 的 Goal resume 表面恢复，而不是反复重发完整任务。
 
 检查 claim、lease 与 scheduler ownership。两种 Host 可以读同一 Goal，但同一个有副作用的 Todo
 只能有一个合法执行者。
+
+## 完成项目接入之后
+
+到这里，你已经可以在不修改 LoopX core 的情况下：
+
+- 让现有 Git 项目拥有可恢复的 Goal、Todo、Gate 与 evidence；
+- 从 Codex App 或 visible Codex CLI TUI 启动同一套项目状态；
+- 在 Host 切换时保留 authority、identity 与 workspace boundary；
+- 用 status、history 与 quota 检查真实 continuation。
+
+接下来按目标选择：
+
+- 要给 LoopX core 提交协议级改动，进入[协议地图与贡献入口](./source-protocol-map.md)；
+- 要交付独立安装的 Provider，进入[选择正确的放置位置](./08-extension-placement.md)；
+- 只使用 LoopX 管理项目，可以直接把本章模式应用到自己的 repository。

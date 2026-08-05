@@ -325,6 +325,18 @@ function validatePage(testCase, html) {
   const outline = extract(html, 'class="VPDocAsideOutline', '</nav>')
   const article = extract(html, 'class="vp-doc ', '</main>')
 
+  expect(
+    /<html[^>]*class="[^"]*\bdark\b/.test(html),
+    `${testCase.name}: first visit did not render in the default dark theme`,
+    failures,
+  )
+  expect(
+    html.includes('LoopX · Dev Book') &&
+      html.includes('/loopx-book/loopx-logo.png'),
+    `${testCase.name}: hydrated navigation is missing the LoopX Dev Book brand`,
+    failures,
+  )
+
   const sidebarRoutes = new Set(
     allMatches(
       sidebar,

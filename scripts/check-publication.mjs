@@ -1,9 +1,18 @@
+import { createHash } from 'node:crypto'
 import { access, readFile, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 
 const root = new URL('..', import.meta.url)
 const distDir = new URL('.vitepress/dist/', root)
 const base = '/loopx-book'
+const brandFiles = {
+  config: new URL('.vitepress/config.mjs', root),
+  theme: new URL('.vitepress/theme/index.js', root),
+  styles: new URL('.vitepress/theme/custom.css', root),
+  logo: new URL('public/loopx-logo.png', root),
+}
+const officialLogoSha256 =
+  '21a345358865c504be36f2061ee5809a9cb3c3e06c4779e576c2355c22d209e7'
 
 const chapters = [
   '00-reading-guide',
@@ -182,6 +191,45 @@ async function hasPublishedTarget(href) {
   return (await Promise.all(candidates.map(pathExists))).some(Boolean)
 }
 
+for (const [label, path] of Object.entries(brandFiles)) {
+  expect(await pathExists(path), `品牌主题缺少 ${label}: ${path.pathname}`)
+}
+
+if ((await Promise.all(Object.values(brandFiles).map(pathExists))).every(Boolean)) {
+  const [config, theme, styles, logo] = await Promise.all([
+    readFile(brandFiles.config, 'utf8'),
+    readFile(brandFiles.theme, 'utf8'),
+    readFile(brandFiles.styles, 'utf8'),
+    readFile(brandFiles.logo),
+  ])
+  expect(
+    config.includes("appearance: 'dark'") &&
+      config.includes("logo: '/loopx-logo.png'") &&
+      config.includes("siteTitle: 'LoopX · Dev Book'"),
+    'VitePress 必须默认深色并声明 LoopX Dev Book 品牌',
+  )
+  expect(
+    theme.includes("from 'vitepress/theme'") &&
+      theme.includes("import './custom.css'"),
+    '品牌主题必须扩展 VitePress 默认主题并加载 custom.css',
+  )
+  for (const marker of [
+    '#050914',
+    '#6eabff',
+    '#96c8ff',
+    '.dark',
+    '.VPHome',
+    '.VPFeature',
+    '.vp-doc',
+  ]) {
+    expect(styles.includes(marker), `品牌样式缺少 LoopX/VitePress 契约标记 ${marker}`)
+  }
+  expect(
+    createHash('sha256').update(logo).digest('hex') === officialLogoSha256,
+    'LoopX logo 必须复用官方 docs/assets/loopx-logo.png，不得漂移或重绘',
+  )
+}
+
 for (const locale of locales) {
   const localeDir = locale.prefix ? locale.prefix.slice(1) : ''
   const homepage = await readFile(
@@ -191,6 +239,11 @@ for (const locale of locales) {
   expect(
     hasBrandCta(homepage, route(locale.prefix, '01-from-session-to-loop')),
     `${locale.name}首页的主 CTA 没有进入第一章`,
+  )
+  expect(
+    homepage.includes('LoopX · Dev Book') &&
+      homepage.includes(`${base}/loopx-logo.png`),
+    `${locale.name}首页缺少 LoopX Dev Book 品牌标题或 logo`,
   )
 
   for (const [index, slug] of chapters.entries()) {

@@ -14,7 +14,7 @@ package 安装与 LoopX activation 是两个独立阶段。LoopX 不负责下载
 
 ## 1. 安装 Python package
 
-从 Labs 根目录创建环境：
+从包含 `standalone-extension/` 的工作目录创建环境：
 
 ```bash
 python3 -m venv .venv
@@ -174,7 +174,7 @@ loopx extension rollback loopx-text-stats --execute --format json
 rollback 同样先 probe previous revision，再切换。它不是任意 Git checkout 回退，而是 activation
 state 中已验证 revision 的生命周期转换。
 
-## 7. 隔离练习状态
+## 7. 隔离示例状态
 
 在 CI 或教程中，可以使用 `--state-file` 指向临时文件，避免污染用户的默认 runtime state：
 
@@ -189,7 +189,7 @@ loopx extension install \
   --format json
 ```
 
-临时文件可能包含本机 runtime identity，不应提交到 Labs。
+临时文件可能包含本机 runtime identity，不应提交到任何公开仓库。
 
 ## 何时不能使用 standalone `run`
 

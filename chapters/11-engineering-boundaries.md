@@ -1,8 +1,8 @@
 # 验证、兼容与安全
 
 一个 Dev Book 只有在读者能复现、能判断成功，并且不会被引导跨过权限边界时才算完成。本章收束
-项目接入、开发者贡献与 Labs 的验证策略。Extension 采用独立 lifecycle 检查，但仍属于开发者
-贡献的一种交付路径。
+项目接入与开发者贡献的验证策略。Extension 采用独立 lifecycle 检查，但仍属于开发者贡献的
+一种交付路径。
 
 ## 本章目标
 
@@ -11,7 +11,7 @@
 - 为项目接入和不同类型的开发者贡献选择合适的验证层；
 - 区分版本兼容、readiness 与业务正确性；
 - 在公开提交前检查 private state；
-- 知道哪些内容应该留在官方文档、Labs 或项目事实源。
+- 知道哪些内容应该留在本书、官方文档或项目事实源。
 
 ## 四层验证
 
@@ -42,13 +42,13 @@ npm audit --audit-level=moderate
 override 是当前依赖图的一部分，不应在升级 VitePress 时盲目保留。先检查新版本的依赖与
 `@vitejs/plugin-vue` peer range，再通过 clean install、build 和 audit 决定是否删除或更新。
 
-Labs：
+书内 standalone Extension 示例：
 
 ```bash
 python3 -m venv .venv
 . .venv/bin/activate
 python3 -m pip install -e './standalone-extension[test]'
-./scripts/smoke.sh
+python3 -m pytest standalone-extension
 ```
 
 ### 2. Product-surface validation
@@ -139,12 +139,11 @@ loopx check \
   --scan-path chapters/
 ```
 
-Labs 还要扫描：
+如果你按照书内示例生成了可运行目录，也要扫描这些路径：
 
 ```bash
 loopx check \
   --scan-path README.md \
-  --scan-path project-onboarding/ \
   --scan-path standalone-extension/
 ```
 
@@ -163,9 +162,9 @@ loopx check \
 
 | 内容 | 放置位置 |
 | --- | --- |
-| 学习顺序、概念解释、恢复思路 | `loopx-book` |
-| 可运行代码、fixture、smoke | `loopx-book-labs` |
+| 学习顺序、概念解释、恢复思路与 scaffold 导读 | `loopx-book` |
 | 完整 CLI 参数、协议与 release behavior | LoopX 官方仓库 |
+| 产品代码、durable fixture 与 smoke | 对应 LoopX 或 Extension 源码仓库 |
 | 当前项目 Goal、Todo、Gate 与 evidence | 项目本地 LoopX state |
 | commit、PR、CI、外部资源事实 | 对应外部系统 |
 
@@ -181,7 +180,7 @@ loopx check \
 - Codex App heartbeat 与 Codex CLI Goal activation；
 - core protocol、state machine、bounded-context owner 与 quality catalog；
 - Extension manifest、doctor、run 与 lifecycle；
-- Labs smoke。
+- 书内步骤能否在当前官方 scaffold 与命令表面上复现。
 
 理论章节只在公开 contract 改变时更新。不要因为内部文件重构就重写用户心智模型。
 
@@ -195,20 +194,11 @@ loopx check \
 - [ ] 项目接入覆盖 Codex App 与 Codex CLI；
 - [ ] 开发者贡献覆盖 Control Plane、Capability、Provider、Host/Runner、Projection/Docs/fixtures；
 - [ ] 贡献内容按 placement、协议、不变量和证据组织，而不是函数列表；
-- [ ] Extension 作为贡献子路径，对应真实 Labs；
+- [ ] Extension 作为贡献子路径，示例基于当前官方 scaffold 可复现；
 - [ ] `npm run docs:build` 成功；
+- [ ] `npm run check:publication` 与浏览器 publication check 成功；
 - [ ] internal links 与 public boundary scan 通过；
 - [ ] 首页预览已由 owner 审阅。
-
-### Labs
-
-- [ ] 可从干净 venv 安装；
-- [ ] project-onboarding 可重置；
-- [ ] Git ignore smoke 通过；
-- [ ] request/response schema tests 通过；
-- [ ] managed install/doctor/run smoke 通过；
-- [ ] 没有凭据、私有状态或本机路径；
-- [ ] 主书与 Labs 双向链接有效。
 
 完成这些检查后，GitHub Pages workflow 才应从 `main` 发布站点。Pages 是展示面，不是内容或
 LoopX 状态的事实源。

@@ -6,7 +6,6 @@ const zhThemeConfig = {
     { text: '理论基础', link: '/chapters/01-from-session-to-loop' },
     { text: '项目接入', link: '/chapters/05-connect-existing-project' },
     { text: '开发者贡献', link: '/chapters/source-protocol-map' },
-    { text: 'Labs', link: 'https://github.com/cocolord/loopx-book-labs' },
   ],
 
   sidebar: [
@@ -102,7 +101,6 @@ const enThemeConfig = {
     { text: 'Foundations', link: '/en/chapters/01-from-session-to-loop' },
     { text: 'Project onboarding', link: '/en/chapters/05-connect-existing-project' },
     { text: 'Developer contributions', link: '/en/chapters/source-protocol-map' },
-    { text: 'Labs', link: 'https://github.com/cocolord/loopx-book-labs' },
   ],
 
   sidebar: [

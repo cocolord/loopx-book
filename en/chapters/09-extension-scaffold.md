@@ -1,7 +1,8 @@
 # Build a standalone Extension
 
-This chapter creates `loopx-text-stats` from the official LoopX scaffold. The complete runnable code lives
-in [loopx-book-labs/standalone-extension](https://github.com/cocolord/loopx-book-labs/tree/main/standalone-extension).
+This chapter creates `loopx-text-stats` from the official LoopX scaffold. The official scaffold supplies
+the complete runnable baseline; this chapter provides the narrowed manifest, request and response
+contracts, core function, and validation steps without a separate exercise repository.
 
 ## Observable success
 
@@ -17,7 +18,7 @@ At the end:
 
 ## 1. Generate the official scaffold
 
-From the Labs repository root:
+From a workspace where you want to build the example:
 
 ```bash
 loopx extension init loopx-text-stats \
@@ -53,7 +54,7 @@ This is a complete standalone path. It does not invent the Capability authority 
 
 ## 2. Read the manifest as a contract
 
-The Lab manifest is:
+After narrowing the generated scaffold to this example, the manifest is:
 
 ```toml
 schema_version = "loopx_extension_manifest_v0"
@@ -113,7 +114,7 @@ the Provider must reject it. It must not reinterpret `path` as file-read authori
 
 ## 4. Implement pure computation
 
-The core function from Labs is:
+The example's core function is:
 
 ```python
 def analyze_text(text: str) -> dict[str, int]:

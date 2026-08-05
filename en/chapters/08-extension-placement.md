@@ -33,6 +33,95 @@ Extension: package and lifecycle
 An Extension can implement an existing Capability, introduce a new Capability, or expose only its own
 bounded standalone command. A Capability can also use a built-in Provider shipped by LoopX core.
 
+## Case: the Finance value-discovery Extension
+
+The current `loopx-finance-value-discovery` package is a useful naming trap. It processes Finance research
+packets, but its manifest declares neither `[[provides]]` nor `[[implements]]`, and it does not register
+`finance-value-discovery` in the Capability catalog.
+
+The official placement guide treats a shared provider-neutral outcome across several Finance data or
+research Providers as a reasonable future `finance-value-discovery` Capability. That direction is not a
+claim that the current catalog already exposes it. The analysis below follows the current manifest,
+catalog readback, and managed runtime.
+
+Its placement rationale is:
+
+```text
+capability_id: none
+provider_id: loopx-finance-value-discovery
+origin: extension
+placement: separately activated package
+reason: deterministic reducer over caller-supplied frozen public-safe evidence;
+        independent package and lifecycle; no provider-neutral caller contract yet
+```
+
+It is not currently a Capability because:
+
+- the public call contract belongs to the Extension protocol `finance_value_discovery_extension_v0`;
+- input is a frozen `finance_value_discovery_input_v0` supplied by the caller, not a broad request such as
+  “find an investment”;
+- the Provider emits one bounded research packet;
+- no set of interchangeable Providers shares a caller outcome, resolver, and domain policy;
+- the current Capability catalog makes no `finance-value-discovery` promise.
+
+It fits the Extension dimension because:
+
+- package, version, doctor, enablement, and upgrade have an independent lifecycle;
+- manifest and runtime permissions are empty;
+- the reducer does not fetch market data, read accounts or portfolios, submit trades, or start continuous
+  monitoring;
+- the same frozen public-safe evidence produces a deterministic result;
+- generic `extension run` crosses no external-effect authority boundary.
+
+The current boundary is:
+
+```text
+public evidence collector or human review
+  -> frozen finance_value_discovery_input_v0
+  -> loopx-finance-value-discovery Extension
+  -> bounded finance_value_discovery_packet_v0
+  -> human / Goal decides whether a successor is justified
+```
+
+Package installation, Extension activation, and invocation prove different facts:
+
+```bash
+# Put the Provider entrypoint in the current Python environment
+python3 -m pip install ./packages/loopx-finance-value-discovery
+
+# Record and activate a doctor-validated manifest revision
+loopx extension install \
+  --manifest packages/loopx-finance-value-discovery/extension.toml \
+  --execute \
+  --format json
+
+# Reduce one frozen public-evidence input through managed runtime
+loopx extension run loopx-finance-value-discovery \
+  --input-json packages/loopx-finance-value-discovery/examples/paypal-debeta-discovery.json \
+  --execute \
+  --format json
+```
+
+These commands require the provider source package. The Extension is not bundled, and LoopX does not
+download the package for the user. `extension list` proves activation state, an executed doctor proves
+readiness for the current revision, and the example run proves the request/response contract. None
+substitutes for another.
+
+Install the package into the same Python environment that runs `loopx`, with
+`loopx-finance-value-discovery` visible on the current `PATH`. Calling the absolute path of `loopx` inside
+a virtual environment without making that environment's Provider entrypoint resolvable causes doctor to
+return `entrypoint_missing`. That is the correct fail-closed result.
+
+### When it should become a Capability plus Provider
+
+If LoopX later needs a stable provider-neutral result across several Finance data or research Providers,
+define the Capability contract first: common input, evidence freshness, authority, failure, readback, and
+successor policy. This package could then declare `[[implements]]` and become one Extension Provider.
+
+Do not register a speculative Capability merely because the package name contains “value discovery.”
+Collection must not leak into this zero-permission reducer either. Public-market, filing, and news
+collection needs its own Provider boundary plus freshness, licensing, and credential Gates.
+
 ## Four candidate locations
 
 ### 1. Project-internal helper
@@ -77,8 +166,9 @@ A standalone Extension is a good starting point when the ability:
 - does not belong to an existing Capability;
 - requires no permissions for direct invocation.
 
-The `loopx-text-stats` Lab fits this shape. It computes statistics from text in the request. It does not read
-files, use the network, modify external systems, or define a cross-Provider product contract.
+The `loopx-text-stats` example in the next chapter fits this shape. It computes statistics from text in the
+request. It does not read files, use the network, modify external systems, or define a cross-Provider
+product contract.
 
 ## Make the placement decision in order
 
@@ -93,7 +183,7 @@ Before creating a module, answer:
 
 ## Record the minimum rationale
 
-For the Lab:
+For that example:
 
 ```text
 capability_id: none

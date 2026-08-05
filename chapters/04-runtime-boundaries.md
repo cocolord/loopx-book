@@ -230,7 +230,7 @@ Host 应服从 current `interaction_contract` 与 `scheduler_hint`，不能把�
 - 本机路径、内部链接和私有组织叙事；
 - 未脱敏的外部 evidence。
 
-本书接入 Lab 会将以下目录排除在 Git 外：
+项目接入章要求将以下目录排除在 Git 外：
 
 ```text
 .loopx/

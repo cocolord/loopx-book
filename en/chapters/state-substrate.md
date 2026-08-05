@@ -182,6 +182,66 @@ A page saying “the PR is merged” may be stale. A previous run saying “test
 commit. Inspect the external system and verify revision, freshness, and scope before using that observation
 for a current transition.
 
+## Storage medium is not the authority contract
+
+The current LoopX control plane is **local-first**: the project registry, active-state workbench, event and
+run history, and runtime state live in project-local or user-local storage. This does not make a Markdown
+file the authority by itself, and replacing files with a database does not automatically create correct
+concurrency or recovery semantics.
+
+[`event_sourced_state_contract_v0`](https://github.com/huangruiteng/loopx/blob/main/docs/reference/protocols/event-sourced-state-contract-v0.md)
+allows JSONL, SQLite, or another local-first append-only implementation when it preserves:
+
+- stable event ids and ordered replay;
+- idempotent append;
+- projection head alignment with the event-store head;
+- public-safe, local-private, and private-pointer partitions;
+- Markdown as a workbench or projection rather than an arbitrary write API.
+
+[`local_state_write_correctness_v0`](https://github.com/huangruiteng/loopx/blob/main/docs/reference/protocols/local-state-write-correctness-v0.md)
+is currently marked as a public-safe protocol draft. Its stronger write-correctness target separates
+`prepare -> preview -> apply -> record -> project`:
+
+- one `idempotency_key` should not duplicate the logical effect;
+- an `expected_revision` mismatch should fail closed or recompute a non-overlapping patch from fresh state;
+- a foreign or expired lease should never be silently cleared;
+- the default target boundary is one Goal, narrowed only for a single order-independent Todo write;
+- external writes, credentials, production, and private reads remain behind independent Gates.
+
+Current Todo lifecycle commands reread and write under the active-state file lock, and preview exposes a
+write intent. The protocol also states that hard idempotency, uniform optimistic CAS, and lease-conflict
+enforcement are promoted writer by writer. Do not assume that every writer already enforces the complete
+Draft.
+
+Files, SQLite, and future providers answer “where are the bytes?” Events, revisions, CAS, leases, and
+authority answer “which transition is legal?”
+
+### Shipped boundary versus design boundary
+
+The current public architecture keeps the CLI as the compatibility baseline and describes a local
+server/daemon as a roadmap. Detailed multi-Host authority, offline queue, and shared-control-plane designs
+live in an RFC whose status is **Draft**. They are not installed cloud features.
+
+You can currently rely on:
+
+- local project state and the global registry projection;
+- the Todo lifecycle writer's active-state file lock, preview/readback, and currently implemented
+  idempotency behavior;
+- registered peers, soft claims, optional task leases, and independent-worktree guards;
+- several Hosts reading one registry and Goal through controlled writeback.
+
+Do not currently promise:
+
+- automatic online authority shared across devices;
+- new claims, completion, lease renewal, or protected writes while a device is offline;
+- consistent distributed state from putting the project directory in a sync drive;
+- NoKV, a database, or IM automatically replacing the LoopX lifecycle owner.
+
+A future cross-device control plane should retain one canonical LoopX authority, revision-bound idempotent
+commands and receipts, and separate message delivery, context memory, and state authority. Until the Draft
+is promoted and validated, this book teaches those boundaries rather than a fictional cloud-mode
+quickstart.
+
 ## Three layers of integrity for historical artifacts
 
 LoopX can prevent research, validation, and decision artifacts from being rewritten silently. That does not

@@ -230,6 +230,67 @@ Handoff 也不是复制 transcript。一个 bounded handoff 至少应让接手�
 接手者仍要重新运行 current guard。旧 Agent 的 receipt 不会自动授予新 Agent source permission，
 旧 workspace observation 也不能证明当前环境未变化。
 
+## 多仓库与并行协作
+
+一个业务目标可以跨多个 Git repository，但这不意味着每个仓库都要建立一个互不相干的 Goal。
+当 acceptance 和决策边界属于同一结果时，可以保留一个 Goal，并让每个 Agent Todo 显式声明：
+
+```text
+todo_id
+task_repository = git:github.com/owner/repo
+required_write_scopes = src/**, tests/**
+claimed_by = <registered-peer>
+continuation_policy = independent_handoff | same_agent_non_delivery
+```
+
+`task_repository` 是不含凭据的 repository identity。它选择 workspace isolation 的目标仓库，**不授予写权限**，
+也不替代 claim、lease、Goal boundary 或 repository maintainer policy。
+
+当前 [`peer_agent_runtime_v1`](https://github.com/huangruiteng/loopx/blob/main/docs/reference/protocols/peer-agent-runtime-v1.md)
+与 `workspace_guard` 要求：当 selected Todo 要写 repository state 时，执行者必须位于 origin 与
+`task_repository` 匹配的 linked independent worktree。匹配 repository 只是必要条件；canonical
+checkout 仍可能被 guard 拒绝。
+
+### 哪些工作适合并行
+
+| 工作类型 | 并行策略 |
+| --- | --- |
+| 研究、源码定位、triage、只读 review | 可以 fan-out；结果以 bounded evidence 回收 |
+| 不同 repository 的实现 | 每个 Todo 绑定自己的 `task_repository` 与 worktree |
+| 同一 repository、disjoint write scopes | 仅在 scope 可证明不重叠且验证可独立时并行 |
+| 同一文件或共享 schema/state machine | 默认串行，或先拆 owner/seam 后再并行 |
+| 外部 effect、merge、publish | 仍由 scoped Gate 和 repository policy 决定 |
+
+Claim 是软 owner，不是锁。只有确有并发写冲突的 Host 才需要可选 `task_lease_v0`；当前 quota
+不会自动消费 hard lease，不能把“有 lease 设计”写成所有并发都已由 server 仲裁。
+
+### 多仓库例子
+
+假设同一 release 需要修改四个 repository：
+
+```text
+Goal: ship-cross-repo-release
+├── Todo A -> repo-a -> agent-a -> worktree-a
+├── Todo B -> repo-b -> agent-b -> worktree-b
+├── Todo C -> repo-c -> agent-c -> worktree-c
+└── Todo D -> integration verification -> waits for A/B/C evidence
+```
+
+A、B、C 可以并行，但 D 不能从自然语言“它们应该完成了”推断 ready。每个实现 Todo 写回 exact
+revision、validation 和 completion evidence；D 再按 dependency 与 fresh readback 进入 frontier。
+
+跨仓库 PR 依赖也必须带 repository identity。`resume_when=pr_merged:#123` 只在 Todo 的 GitHub
+`task_repository` 与 merge event repository 匹配时成立；跨仓库应使用
+`pr_merged:owner/repo#123`。缺少 repository identity 时，当前实现会 fail closed，而不是按相同
+PR 编号猜测。
+
+### 当前不支持的自动化
+
+当前产品不承诺“给一个 root 目录就自动并行四个 Goal”或“云端 coordinator 自动选择设备并
+claim”。bounded multi-agent orchestration 可以启用 child-agent planning，但 peer identity、
+claim、workspace guard、Gate 和 writeback 仍逐 Todo 生效。跨设备在线 authority 仍属于 Draft
+设计边界。
+
 ## 工作图的三种结束方式
 
 一项 Todo 离开 active frontier 时，至少属于以下之一：

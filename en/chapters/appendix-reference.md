@@ -91,6 +91,85 @@ Goal from similar text or take over the only existing Agent automatically. Regis
 `register-agent --goal-id <goal-id> --agent-id <new-agent-id>` preview followed by atomic `--execute`; use
 an existing identity only for an explicitly authorized takeover.
 
+## Safe upgrade runbook
+
+For a no-clone installation, `loopx update` is the primary path. Do not overwrite a release snapshot by
+hand:
+
+Run `loopx update --check` for a read-only freshness check, then
+`loopx update --dry-run` for the install preview. Neither command installs.
+
+A normal upgrade needs only:
+
+```bash
+loopx update --check
+loopx update --dry-run
+loopx update --execute
+loopx doctor
+```
+
+Use the full flow below when you need pre-upgrade evidence, Host or Extension migration checks, or a
+rollback path.
+
+```bash
+# 1. Record current facts
+command -v loopx
+loopx --version
+loopx --format json doctor > /tmp/loopx-doctor-before.json
+
+# 2. Inspect stable ref, freshness, and the recommendation
+loopx update --check
+
+# 3. Preview the ref, release id, and rollback target
+loopx update --dry-run
+
+# 4. Run the archive installer and post-update doctor
+loopx update --execute
+
+# 5. Recheck commands, skills, Host integration, and project state
+loopx --version
+loopx doctor
+loopx slash-commands
+loopx slash-commands --install
+loopx status
+```
+
+The public `stable` ref is the default source. `--ref main` is a maintainer or development qualification
+path, not the ordinary user default. `update --execute` installs a release snapshot and runs doctor; a
+successful exit does not prove that every Host automation, Goal migration, or Extension Provider is
+updated.
+
+Validate the surfaces you use:
+
+- `loopx doctor`: wrapper, release manifest, Python import, skill delivery, and Host integration;
+- `loopx slash-commands --install`: updates only LoopX-managed command files and skips user-owned
+  collisions;
+- `loopx quota should-run` or `loopx upgrade-plan`: peer-runtime and heartbeat-prompt migrations;
+- `loopx extension list` plus executed `extension doctor`: readiness for each active revision;
+- `loopx status` and `history`: registry, Goal, Todo, and projection continuity.
+
+Before a risky migration, scheduler change, or runtime repair, preview and create a private local backup:
+
+```bash
+loopx backup-state --project .
+loopx backup-state --project . --execute
+```
+
+The archive contains local runtime and project state. It is private recovery material and must not be
+committed or published.
+
+When a new release blocks normal work, inspect current `loopx update --help`, then select a recorded release
+id or use:
+
+```bash
+loopx update --rollback previous
+loopx doctor
+```
+
+Rollback restores the LoopX release snapshot only. Project state already written by the new version,
+external effects, and separately installed Extension packages may need their own migrations or rollback.
+Do not describe wrapper rollback as whole-system rollback.
+
 ## Scheduler convergence entrypoint
 
 When a Codex App packet reports `stateful_backoff.apply_needed=true`, have the Host apply

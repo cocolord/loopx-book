@@ -7,6 +7,11 @@
 仓库、读取当前 LoopX 命令表面、执行安全的接入步骤并返回可验收的报告。手动命令仍然重要，
 但主要用于理解 Agent 做了什么、复核结果和恢复失败。
 
+::: tip 快速阅读路线
+只想完成基础接入：按第 1–6 节执行，到“验证 Git 隔离”即可结束。只有项目确实需要可选
+Capability 或 Extension 时，再读第 7 节。
+:::
+
 ## 成功标准
 
 完成后，你应该能观察到：
@@ -110,75 +115,6 @@ next_action: <one concrete next step>
 如果存在多个 Goal、活动 lease、未完成 mutation 或 workspace 路由不一致，只给诊断和选择，
 不要写状态。不要提交或推送。
 ```
-
-### 接入时启用已有 Extension
-
-项目接入还可以包含可选 Provider 的本地启用，但这不是 `connect` 的隐式副作用。以当前
-`loopx-finance-value-discovery` 为例，它是独立分发的零权限 Extension；只有你已经获得包含
-`packages/loopx-finance-value-discovery/` 的 LoopX 源码 checkout 或等价 provider 源码包时，
-Agent 才能按下面的路径安装。源码与 manifest 位于 LoopX 官方仓库的
-[`packages/loopx-finance-value-discovery`](https://github.com/huangruiteng/loopx/tree/main/packages/loopx-finance-value-discovery)。
-
-把这段补充到接入提示词：
-
-```text
-接入完成后，检查当前环境是否已经安装并启用 loopx-finance-value-discovery。
-
-- 先运行 loopx extension list --format json，不要根据目录存在猜测 activation state。
-- 如果 Extension 已安装且 enabled，执行一次只读 doctor readback；不要重复 install。
-- 如果已安装但 disabled，在解释将重新运行 doctor 后，preview 并执行 extension enable。
-- 如果尚未安装，先确认 provider source package 和
-  packages/loopx-finance-value-discovery/extension.toml 存在。
-- 修改 Python environment 属于本地环境写操作。先展示 pip install、extension install 和
-  doctor 命令，得到我授权后再执行。
-- package 必须安装到运行 `loopx` 的同一 Python environment，并让 provider entrypoint 出现在
-  当前 shell 的 `PATH`；否则 doctor 应返回 `entrypoint_missing`，不能绕过。
-- provider 源码包不存在时停下来报告：当前 release-only 环境不能隐式下载或启用这个 Extension。
-- 不要把它描述成行情采集器或投资建议能力。它只把调用方提供的 frozen public-safe evidence
-  归约成有界研究 packet，不执行网络读取、账户读取、交易或持续监控。
-- 完成后回报 package install、extension enabled、doctor ready 和一次示例 run 的独立结果。
-```
-
-对应的人工可读流程是：
-
-```bash
-# 1. 观察当前 activation state
-loopx extension list --format json
-
-# 2. 仅当 provider source package 存在且你允许修改当前 Python environment
-python3 -m pip install ./packages/loopx-finance-value-discovery
-
-# 如果使用 venv，先激活它，并确认 loopx 与 provider 来自同一 environment
-command -v loopx
-command -v loopx-finance-value-discovery
-
-# 3. 先 preview，再注册并激活已安装的 provider
-loopx extension install \
-  --manifest packages/loopx-finance-value-discovery/extension.toml \
-  --format json
-
-loopx extension install \
-  --manifest packages/loopx-finance-value-discovery/extension.toml \
-  --execute \
-  --format json
-
-# 4. 重新执行只读 readiness probe
-loopx extension doctor \
-  loopx-finance-value-discovery \
-  --execute \
-  --format json
-```
-
-如果 `extension list` 已显示该 Extension 安装但 `enabled=false`，不要再次 install：
-
-```bash
-loopx extension enable loopx-finance-value-discovery --format json
-loopx extension enable loopx-finance-value-discovery --execute --format json
-```
-
-实际调用还需要一个 `finance_value_discovery_input_v0` 文件。只有 `extension list`、executed
-doctor 和示例 `extension run --execute` 都成功，接入回报才可以写“Extension 可用”。下一节的
-placement 案例会解释为什么它没有注册同名 Capability。
 
 ## 2. 安装并检查 LoopX
 
@@ -336,6 +272,104 @@ git ls-files .loopx .codex/goals .local
 
 第二条命令应无输出。如果输出了路径，说明本地控制状态已经被 Git 跟踪；仅增加 `.gitignore`
 不会自动解除跟踪。先检查是否包含应保留的历史，再从 index 中移除，避免误删本地状态。
+
+## 7. 可选：启用 Provider 与 Goal 功能
+
+基础接入到这里已经完成。只有当前项目确实需要可选能力时，才继续本节。
+
+先完成能力发现和 Goal 配置；只有需要独立分发的 Provider 时，再继续 Extension 示例。
+
+### 发现 Capability 与可选功能
+
+Capability catalog、Goal feature config 和 Extension activation 是三种不同表面：
+
+用 `loopx capability list` 发现当前 Capability；用
+`loopx --format json configure-goal --goal-id <goal-id>` 读取当前 Goal 的可选功能。
+
+```bash
+loopx capability list --format json
+loopx capability show <capability-id> --format json
+loopx --format json configure-goal --goal-id <goal-id>
+loopx extension list --format json
+```
+
+`capability list/show` 是只读 catalog，不修改 Goal，也不安装 Provider。传入
+`--extension-manifest` 只影响本次 catalog read；`declared=true` 不等于 installed、enabled 或
+ready。
+
+`configure-goal` 不带 setting flag 时也是只读。当前没有“enable 任意 capability id”的通用命令；
+每项 default-off 功能都有明确配置字段。以 change-quality 为例：
+
+```bash
+loopx configure-goal --goal-id <goal-id> --change-quality-enabled
+loopx configure-goal --goal-id <goal-id> --change-quality-enabled --execute
+```
+
+对于 `multi_subagent`、Explore Graph、Explore Harness、Reward Memory、Lark inbox 等功能，读取
+当前 help 和 catalog delta，不要从名称猜参数。始终按“读 catalog -> preview -> 检查 delta ->
+execute -> readback”执行。
+
+Todo 中的 `required_capabilities` 表示执行前必须已有的能力；`target_capabilities` 表示当前 Todo
+正在建设、修复或验证的能力。缺失 target 可以进入 repair mode，不能反过来阻止建设它的 Todo。
+
+因此，“catalog 可见”“Goal 已开启”“Provider doctor-ready”“本轮可用”是四种不同事实。
+
+### 接入时启用已有 Extension
+
+可选 Provider 的本地启用不是 `connect` 的隐式副作用。以当前
+`loopx-finance-value-discovery` 为例，它是独立分发的零权限 Extension；只有你已经获得包含
+`packages/loopx-finance-value-discovery/` 的 LoopX 源码 checkout 或等价 provider 源码包时，
+Agent 才能安装。源码与 manifest 位于 LoopX 官方仓库的
+[`packages/loopx-finance-value-discovery`](https://github.com/huangruiteng/loopx/tree/main/packages/loopx-finance-value-discovery)。
+
+把这段补充到接入提示词：
+
+```text
+接入完成后，检查当前环境是否已经安装并启用 loopx-finance-value-discovery。
+
+- 先运行 loopx extension list --format json，不要根据目录存在猜测 activation state。
+- 如果 Extension 已安装且 enabled，执行一次只读 doctor readback；不要重复 install。
+- 如果已安装但 disabled，在解释将重新运行 doctor 后，preview 并执行 extension enable。
+- 如果尚未安装，先确认 provider source package 和
+  packages/loopx-finance-value-discovery/extension.toml 存在。
+- 修改 Python environment 属于本地环境写操作。先展示 pip install、extension install 和
+  doctor 命令，得到我授权后再执行。
+- package 必须安装到运行 `loopx` 的同一 Python environment，并让 provider entrypoint 出现在
+  当前 shell 的 `PATH`；否则 doctor 应返回 `entrypoint_missing`，不能绕过。
+- provider 源码包不存在时停下来报告：当前 release-only 环境不能隐式下载或启用这个 Extension。
+- 不要把它描述成行情采集器或投资建议能力。它只把调用方提供的 frozen public-safe evidence
+  归约成有界研究 packet，不执行网络读取、账户读取、交易或持续监控。
+- 完成后回报 package install、extension enabled、doctor ready 和一次示例 run 的独立结果。
+```
+
+人工流程是：
+
+```bash
+loopx extension list --format json
+python3 -m pip install ./packages/loopx-finance-value-discovery
+
+# 使用 venv 时先激活，并确认两个命令来自同一 environment
+command -v loopx
+command -v loopx-finance-value-discovery
+
+loopx extension install \
+  --manifest packages/loopx-finance-value-discovery/extension.toml \
+  --format json
+
+loopx extension install \
+  --manifest packages/loopx-finance-value-discovery/extension.toml \
+  --execute \
+  --format json
+
+loopx extension doctor \
+  loopx-finance-value-discovery \
+  --execute \
+  --format json
+```
+
+若已安装但 `enabled=false`，使用 `extension enable` preview，再添加 `--execute`。实际调用还需要
+`finance_value_discovery_input_v0`。只有 `extension list`、executed doctor 和示例
+`extension run --execute` 都成功，接入回报才可写“Extension 可用”。
 
 ## 恢复路径
 

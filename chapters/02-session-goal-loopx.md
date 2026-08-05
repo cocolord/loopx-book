@@ -9,6 +9,8 @@
 
 - 说明普通会话、Codex Goal 与 LoopX 各自拥有的状态；
 - 从五类可观察行为解释 LoopX 在 Goal 之上增加了什么；
+- 用任务资格卡判断是否值得引入长程控制面；
+- 根据当前 Host 的真实唤醒与 writeback 表面选择启动方式；
 - 判断什么时候 Codex Goal 已经足够；
 - 解释 LoopX 与 Codex Goal 如何组合。
 
@@ -56,6 +58,45 @@ LoopX 同时处理 Goal、Agent 和 Host，但三者回答的是不同问题：
 5. Agent 名称或前缀不证明 Host，实际运行面要由 host/runtime metadata 说明。
 
 这样，“继续同一个项目”与“冒充上一个执行者”不会被压成同一操作。
+
+## 任务资格卡：先判断是否值得使用 LoopX
+
+LoopX 不是“任务越大越应该用”的同义词。先把任务写成一张可审查的资格卡：
+
+这张卡是本书提供的决策工具，不是 LoopX CLI schema，也不会被 `start-goal` 自动写入状态。
+真正进入 LoopX 的 Goal、Todo、Gate、acceptance 和 boundary 仍以当前协议与 CLI 为准。
+
+| 字段 | 要回答的问题 | 不满足时的默认选择 |
+| --- | --- | --- |
+| `duration` | 是否会跨 session、等待窗口或工作日？ | 普通会话 |
+| `external_wait` | 是否要等待 CI、review、审批或外部资源？ | 普通会话或 Host Goal |
+| `handoff` | 是否会更换 Agent、Host、设备或责任人？ | 同一 Host Goal |
+| `authority` | 是否涉及 private read、凭据、production 或 external write？ | 先定义 Gate，不要启动自动执行 |
+| `acceptance` | 什么可观察证据足以判断完成？ | 先补验收，不能只写“持续优化” |
+| `baseline` | 和普通会话或 Host Goal 比较时，什么保持一致？ | 不做效果提升 claim |
+| `stop_condition` | 何时完成、阻塞、降级或停止投入？ | 先补 terminal contract |
+
+满足一项不代表必须使用 LoopX。真正有价值的组合通常是：跨 session + 有外部等待或 handoff +
+有独立 acceptance，并且项目需要把 authority、evidence 和恢复条件外置。
+
+### 如何比较普通会话、Goal 与 LoopX
+
+如果要判断 LoopX 是否提升了真实任务，不要比较两个不同任务或不同预算。至少保持：
+
+```text
+same task semantics
+same runner / model / reasoning settings
+same verifier contract
+same time and cost budget
+```
+
+记录 completion、独立 verifier、错误写入、人工介入、stop-policy、wall time 和 cost。没有 matched
+baseline 或独立 verifier 时，可以记录使用体验，不能声称产品能力提升。
+
+[`release_outcome_baseline_v0`](https://github.com/huangruiteng/loopx/blob/main/docs/reference/protocols/release-outcome-baseline-v0.md)
+进一步规定正式 release qualification 比较的是 **稳定 LoopX release 与 candidate revision**；
+它明确不把 native Agent 与 LoopX treatment 的对比当作 release promotion evidence。后者可以是
+产品研究，但必须单独说明 arm semantics，不能借用 release qualification 的结论强度。
 
 ## 用同一任务比较
 
@@ -179,6 +220,25 @@ Other host hook ─────┘
 Host 可以不同，项目状态不能分叉成多个事实源。恢复依赖 event、lineage、projection、fresh
 environment read 与 replan，而不是要求新 Host 继承旧 transcript。下一章会先拆开这些状态表面，
 再进入工作图与 Turn protocol。
+
+## Host 兼容矩阵
+
+LoopX 保留同一 control-plane contract，但不同 Host 的启动和唤醒机制并不相同。当前公开
+[Runtime Connector Catalog](https://github.com/huangruiteng/loopx/blob/main/docs/integrations/runtime-connector-catalog.md)
+给出的主要路径是：
+
+| Host surface | 驱动 | 关键限制 |
+| --- | --- | --- |
+| Codex App | `$loopx <task>` + App heartbeat | cadence 需要 RRULE apply/readback/ACK |
+| Codex App over SSH | visible `/goal` | 不依赖 App automation tools |
+| Codex CLI TUI | generated bootstrap + visible `/goal` | 保持 visible、interruptible |
+| Claude Code | `/loopx` + opt-in native `/loop` adapter | 仍走同一 quota/writeback |
+| OpenCode | `/loopx` + opt-in Goal bridge | Todo 写回后还需 bridge activation |
+| Shell / other Agent | guided packet + caller-owned runner | 无 runner hook 时由调用方唤醒 |
+
+表中出现一个 Host 不代表所有 Host 都支持相同 automation API。`host_surface` 未知时，应省略一次
+该参数并使用只读 selection Gate；不要把 Codex CLI、IDE plugin、App SSH 或普通 shell 猜成
+Codex App heartbeat。
 
 ## 如何组合 Codex Goal 与 LoopX
 

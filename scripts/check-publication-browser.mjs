@@ -20,6 +20,27 @@ const cases = [
     ],
   },
   {
+    name: '中文任务资格与 Host',
+    route: '/chapters/02-session-goal-loopx',
+    counterpart: '/en/chapters/02-session-goal-loopx',
+    expectedPagerCount: 2,
+    expectedArticleTerms: ['任务资格卡', 'Host 兼容矩阵', 'same task semantics'],
+  },
+  {
+    name: '中文状态存储边界',
+    route: '/chapters/state-substrate',
+    counterpart: '/en/chapters/state-substrate',
+    expectedPagerCount: 2,
+    expectedArticleTerms: ['存储介质不是 authority contract', 'local_state_write_correctness_v0', 'Draft'],
+  },
+  {
+    name: '中文多仓库协作',
+    route: '/chapters/work-graph-and-authority',
+    counterpart: '/en/chapters/work-graph-and-authority',
+    expectedPagerCount: 2,
+    expectedArticleTerms: ['多仓库与并行协作', 'task_repository', '不授予写权限'],
+  },
+  {
     name: '中文中间章',
     route: '/chapters/source-protocol-map',
     counterpart: '/en/chapters/source-protocol-map',
@@ -34,6 +55,7 @@ const cases = [
       '让 Agent 帮你接入',
       '接入时启用已有 Extension',
       'loopx-finance-value-discovery',
+      '发现 Capability 与可选功能',
     ],
   },
   {
@@ -52,12 +74,34 @@ const cases = [
     route: '/chapters/appendix-reference',
     counterpart: '/en/chapters/appendix-reference',
     expectedPagerCount: 1,
+    expectedArticleTerms: ['安全升级 runbook', 'loopx update --check', 'loopx update --dry-run'],
   },
   {
     name: 'English first chapter',
     route: '/en/chapters/01-from-session-to-loop',
     counterpart: '/chapters/01-from-session-to-loop',
     expectedPagerCount: 2,
+  },
+  {
+    name: 'English task qualification and Host',
+    route: '/en/chapters/02-session-goal-loopx',
+    counterpart: '/chapters/02-session-goal-loopx',
+    expectedPagerCount: 2,
+    expectedArticleTerms: ['Task qualification card', 'Host compatibility matrix', 'same task semantics'],
+  },
+  {
+    name: 'English state storage boundary',
+    route: '/en/chapters/state-substrate',
+    counterpart: '/chapters/state-substrate',
+    expectedPagerCount: 2,
+    expectedArticleTerms: ['Storage medium is not the authority contract', 'local_state_write_correctness_v0', 'Draft'],
+  },
+  {
+    name: 'English multi-repository collaboration',
+    route: '/en/chapters/work-graph-and-authority',
+    counterpart: '/chapters/work-graph-and-authority',
+    expectedPagerCount: 2,
+    expectedArticleTerms: ['Multi-repository and parallel work', 'task_repository', 'does not grant write authority'],
   },
   {
     name: 'English middle chapter',
@@ -74,6 +118,7 @@ const cases = [
       'Delegate onboarding to an Agent',
       'Enable an existing Extension during onboarding',
       'loopx-finance-value-discovery',
+      'Discover Capabilities and optional features',
     ],
   },
   {
@@ -92,6 +137,7 @@ const cases = [
     route: '/en/chapters/appendix-reference',
     counterpart: '/chapters/appendix-reference',
     expectedPagerCount: 1,
+    expectedArticleTerms: ['Safe upgrade runbook', 'loopx update --check', 'loopx update --dry-run'],
   },
 ]
 

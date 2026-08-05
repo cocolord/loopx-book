@@ -10,6 +10,8 @@ After this chapter, you should be able to:
 - explain which state a normal session, Codex Goal, and LoopX each own;
 - describe five observable contracts that LoopX adds beyond a Host goal;
 - keep Goal, Agent, and Host identity decisions separate;
+- use a Task qualification card before introducing a long-running control plane;
+- select a start path from the actual Host wake-up and writeback surface;
 - recognize when Codex Goal is sufficient;
 - combine Codex Goal and LoopX without creating competing state machines.
 
@@ -60,6 +62,49 @@ Goal-start contract keeps those choices explicit:
 5. an Agent name or prefix does not prove the Host surface; runtime metadata does.
 
 This lets a session continue the same project without silently impersonating the previous executor.
+
+## Task qualification card: decide whether LoopX earns its cost
+
+LoopX is not synonymous with “use it whenever the task is large.” Write a reviewable qualification card
+first:
+
+This card is an editorial decision aid from this book. It is not a LoopX CLI schema, and `start-goal` does
+not persist it automatically. The current Goal, Todo, Gate, acceptance, and boundary protocols remain
+authoritative.
+
+| Field | Question | Default when missing |
+| --- | --- | --- |
+| `duration` | Will work cross sessions, waiting windows, or workdays? | Normal session |
+| `external_wait` | Will it wait for CI, review, approval, or an external resource? | Normal session or Host Goal |
+| `handoff` | Will Agent, Host, device, or owner change? | One Host Goal |
+| `authority` | Does it involve private reads, credentials, production, or external writes? | Define the Gate before automation |
+| `acceptance` | Which observable evidence proves completion? | Define acceptance before “continuous improvement” |
+| `baseline` | What stays matched against a normal session or Host Goal? | Make no uplift claim |
+| `stop_condition` | When does work complete, block, downgrade, or stop? | Define the terminal contract first |
+
+One positive field is not enough. LoopX usually earns its cost when work crosses sessions, includes an
+external wait or handoff, has independent acceptance, and needs authority, evidence, and recovery outside
+the transcript.
+
+### Compare a session, Goal, and LoopX fairly
+
+To evaluate real task outcomes, do not compare different tasks or budgets. Match at least:
+
+```text
+same task semantics
+same runner / model / reasoning settings
+same verifier contract
+same time and cost budget
+```
+
+Record completion, independent verifier result, erroneous writes, human intervention, stop-policy
+correctness, wall time, and cost. Without a matched baseline or independent verifier, report experience;
+do not claim product uplift.
+
+[`release_outcome_baseline_v0`](https://github.com/huangruiteng/loopx/blob/main/docs/reference/protocols/release-outcome-baseline-v0.md)
+sets a narrower release-qualification contract: it compares a stable LoopX release with a candidate
+revision. It explicitly does not treat native-Agent-versus-LoopX treatment studies as release-promotion
+evidence. Those studies can inform product research only when their arm semantics are stated separately.
 
 ## Compare them on one task
 
@@ -180,6 +225,26 @@ Other Host hook ─────┘
 Recovery uses events, lineage, projections, a fresh environment read, and replanning instead of requiring
 the new Host to inherit the old transcript. The next chapter separates those state surfaces before the
 book moves into work graphs and governed Turns.
+
+## Host compatibility matrix
+
+LoopX preserves one control-plane contract, but Hosts do not share one wake-up implementation. The current
+public
+[Runtime Connector Catalog](https://github.com/huangruiteng/loopx/blob/main/docs/integrations/runtime-connector-catalog.md)
+defines these main paths:
+
+| Host surface | Driver | Key limit |
+| --- | --- | --- |
+| Codex App | `$loopx <task>` plus App heartbeat | Cadence needs RRULE apply/readback/ACK |
+| Codex App over SSH | Visible `/goal` | Does not depend on App automation tools |
+| Codex CLI TUI | Generated bootstrap plus visible `/goal` | Stays visible and interruptible |
+| Claude Code | `/loopx` plus opt-in native `/loop` adapter | Uses the same quota and writeback |
+| OpenCode | `/loopx` plus opt-in Goal bridge | Bridge activation follows Todo writeback |
+| Shell / other Agent | Guided packet plus caller-owned runner | Caller owns wake-up without a runner hook |
+
+Catalog presence does not mean every Host exposes the same automation API. When `host_surface` is unknown,
+omit it once and follow the read-only selection Gate. Do not guess that a CLI, IDE plugin, App SSH
+workspace, or ordinary shell is a Codex App heartbeat.
 
 ## How Codex Goal and LoopX compose
 

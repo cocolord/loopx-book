@@ -1,6 +1,12 @@
 import { defineConfig } from 'vitepress'
 
+const brandTheme = {
+  logo: '/loopx-logo.png',
+  siteTitle: 'LoopX · Dev Book',
+}
+
 const zhThemeConfig = {
+  ...brandTheme,
   nav: [
     { text: '首页', link: '/' },
     { text: '理论基础', link: '/chapters/01-from-session-to-loop' },
@@ -96,6 +102,7 @@ const zhThemeConfig = {
 }
 
 const enThemeConfig = {
+  ...brandTheme,
   nav: [
     { text: 'Home', link: '/en/' },
     { text: 'Foundations', link: '/en/chapters/01-from-session-to-loop' },
@@ -175,6 +182,7 @@ export default defineConfig({
   title: 'LoopX Book',
   description: 'A protocol-first developer book for LoopX foundations, project onboarding, and developer contributions',
   base: '/loopx-book/',
+  appearance: 'dark',
   cleanUrls: true,
   lastUpdated: true,
   srcExclude: ['README.md'],
@@ -196,6 +204,7 @@ export default defineConfig({
   },
 
   themeConfig: {
+    ...brandTheme,
     search: {
       provider: 'local',
     },

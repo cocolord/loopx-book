@@ -1,7 +1,7 @@
 # 连接你的 Git 项目
 
 项目接入是一条独立实践路径。你不需要修改 LoopX Kernel，也不需要先开发 Extension。本章先建立
-项目状态和 Git 边界；下一章与第七章再分别从 Codex App 和 Codex CLI 启动。
+项目状态和 Git 边界；后两章再分别从 Codex App 和 Codex CLI 启动。
 
 ## 成功标准
 
@@ -12,7 +12,8 @@
 - 项目存在 `.codex/goals/<goal-id>/ACTIVE_GOAL_STATE.md`；
 - `loopx status` 能显示 active state、当前 Gate 和下一项 Agent Todo；
 - `.loopx/` 与 `.codex/goals/` 不会进入 Git；
-- 再次连接会复用已有状态，而不是覆盖目标。
+- 再次连接会按精确 `goal_id` 复用已有 Goal，而不是覆盖目标；
+- 新接入的执行者使用 fresh `agent_id`，除非用户明确授权 takeover。
 
 这些本地文件是控制面状态，不是项目源码。不要把它们提交到公开仓库。
 
@@ -89,6 +90,37 @@ loopx start-goal \
 这个命令生成 guided transaction packet。它默认是预览，不应被理解为已经完成 Todo 写回、Host
 激活和 Agent Turn。Agent 或 Host 集成需要按 packet 执行计划、状态写回与启动步骤。
 
+### 先选择 Goal，再选择 Agent
+
+Guided start 会把两个选择分开：
+
+1. **Goal selection**：如果项目只有一个已注册 Goal，复用它的精确 `goal_id`；如果有多个，返回
+   只读 `goal_selection_gate`。从 `choices` 中选择一个精确重跑命令，在此之前不写 Todo、不注册
+   Agent，也不激活 Host loop。
+2. **Agent identity**：对带任务文本的新接入，未指定 `--agent-id` 时默认要求 fresh identity。
+   已有 Agent 是 takeover choice，不是自动默认值。
+
+不要根据 objective 的文字相似度选择 Goal，也不要因为 registry 中只有一个 Agent 就自动接管它。
+推荐路径是先预览、再原子注册一个新的 public-safe id：
+
+```bash
+loopx register-agent \
+  --goal-id <selected-goal-id> \
+  --agent-id <new-public-safe-agent-id> \
+  --require-new
+
+loopx register-agent \
+  --goal-id <selected-goal-id> \
+  --agent-id <new-public-safe-agent-id> \
+  --require-new \
+  --execute
+```
+
+Preview 只用于检查计划。继续 Todo writeback 前，应确认 execute result 的 `ok`、`changed` 和
+`written` 为 true，global sync 成功，并且 source/global registration readback 已验证。若用户确实
+要求接管旧 lane，则直接选择 packet 中绑定该精确 `agent_id` 的 takeover 命令，不要伪造 fresh
+registration。
+
 如果你已经知道当前 Host，可以显式指定，避免错误路由：
 
 ```bash
@@ -114,7 +146,7 @@ loopx registry
 loopx status
 loopx todo list --goal-id <goal-id>
 loopx history --goal-id <goal-id>
-loopx quota should-run --goal-id <goal-id>
+loopx quota should-run --goal-id <goal-id> --agent-id <agent-id>
 ```
 
 这些命令回答不同问题：
@@ -160,8 +192,10 @@ loopx slash-commands --install
 
 ### 项目已有状态
 
-默认复用它。先执行 `loopx registry`、`loopx status` 和 `loopx history`，确认 active objective 后
-再决定是否需要迁移。不要用 force reconnect 覆盖一个仍有价值的 Goal。
+默认保留它。先执行 `loopx registry`、`loopx status` 和 `loopx history`，再按精确 `goal_id`
+选择要继续的 Goal；多个 Goal 必须经过 selection gate。然后为新执行者注册 fresh `agent_id`，
+或在用户明确要求时 takeover 指定 identity。不要用 force reconnect 覆盖一个仍有价值的 Goal，
+也不要把旧 Agent identity 当作 Goal 本身。
 
 ### linked worktree 指向错误目录
 

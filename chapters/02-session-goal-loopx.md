@@ -23,6 +23,40 @@
 LoopX 不复制 Host 的模型执行，也不把 Codex Goal 降级为一个 prompt 技巧。Host Goal 负责“继续
 围绕目标运行”，LoopX 负责“从项目状态编译出当前合法的一轮工作”。
 
+## 四类 Actor
+
+为了避免把产品、模型和状态系统都叫作“Agent”，先固定四类责任：
+
+| Actor | 主要拥有 | 不应拥有 |
+| --- | --- | --- |
+| User / operator | 方向、私有材料、凭据、production、public claim 等边界决定 | 每个普通 Todo 的人工调度 |
+| Host | session、模型 Turn、visible TUI 或 heartbeat 等唤醒表面 | 项目长期事实和自定义状态机 |
+| Executor / Agent | 当前 Turn 的推理、工具调用、bounded delivery 与验证 | 隐式长期记忆和越权批准 |
+| LoopX control plane | Goal、Todo、Gate、quota、evidence lineage、recovery protocol | 模型推理、Git/CI 外部事实 |
+
+Dashboard、review packet 和 prompt 是 projection/interaction surfaces，不是第五个 authority。
+
+## 三种身份必须分开
+
+LoopX 同时处理 Goal、Agent 和 Host，但三者回答的是不同问题：
+
+| 身份 | 回答的问题 | 稳定性与选择规则 |
+| --- | --- | --- |
+| `goal_id` | 正在推进哪个长期项目边界？ | 绑定 registry、Todo、Gate 和 evidence lineage；复用时选择已有的精确 id |
+| `agent_id` | 当前由哪个 peer/lane 承担工作？ | 绑定 claim、Vision、quota 与 writeback；新接入默认注册 fresh identity |
+| `host_surface` / runtime profile | 这一轮实际由哪个产品表面执行和唤醒？ | 绑定 App heartbeat、visible Goal 或其他 host loop；必须按当前运行面显式声明 |
+
+已有 Goal 可以继续复用，不代表新 session 应接管已有 Agent identity。最新 Goal-start 合同要求：
+
+1. 多个已注册 Goal 同时存在时，先返回只读 `goal_selection_gate`，再以精确 `--goal-id` 重跑；
+2. 不根据相似的 objective、聊天摘要或目录名猜测 Goal；
+3. 新的 argument-bearing `start-goal --guided` 未指定 `--agent-id` 时，即使只有一个已注册 Agent，
+   也默认进入 fresh identity registration；
+4. 只有用户明确要求接管某个已有 Agent，才以该精确 `agent_id` 继续；
+5. Agent 名称或前缀不证明 Host，实际运行面要由 host/runtime metadata 说明。
+
+这样，“继续同一个项目”与“冒充上一个执行者”不会被压成同一操作。
+
 ## 用同一任务比较
 
 仍以“为 CLI 增加 JSON 输出”为例。
@@ -84,11 +118,14 @@ Gate G
 
 ### 1. Todo、claim 与 handoff
 
-Goal 表达方向，Todo 表达可调度的工作单元。LoopX 可以为 Todo 记录优先级、依赖、claim、lease、
-successor 和 handoff。
+Goal 表达项目结果，Todo 表达可调度的工作单元。LoopX 可以为 Todo 记录优先级、依赖、claim、
+lease、successor 和 handoff。Per-Agent Vision 则保存某个 peer 当前的 bounded role direction、
+acceptance summary 与 replan trigger；它不是另一个 Goal，也不是全局产品愿景。
 
-这使“目标仍 active”与“当前谁可以做哪件事”成为两个问题。多 Agent 场景中，Agent id 是工作
-身份，不是 Host 身份；`codex-*` 前缀也不能证明任务实际运行在 Codex App 还是 CLI。
+这使“目标仍 active”与“当前谁可以做哪件事”成为两个问题。Agent id 是工作身份，不是 Host
+身份；`codex-*` 前缀也不能证明任务实际运行在 Codex App 还是 CLI。新 session 可以复用同一
+Goal 的历史与 frontier，同时以 fresh Agent identity 进入；已有 claim 则通过显式 takeover 或
+handoff 处理。
 
 ### 2. Gate 与 authority
 
@@ -139,8 +176,9 @@ Codex CLI Goal ──────┼──> LoopX project state ──> current 
 Other host hook ─────┘
 ```
 
-Host 可以不同，项目状态不能分叉成多个事实源。恢复依赖 event、lineage、projection 与 replan，
-而不是要求新 Host 继承旧 transcript。
+Host 可以不同，项目状态不能分叉成多个事实源。恢复依赖 event、lineage、projection、fresh
+environment read 与 replan，而不是要求新 Host 继承旧 transcript。下一章会先拆开这些状态表面，
+再进入工作图与 Turn protocol。
 
 ## 如何组合 Codex Goal 与 LoopX
 
@@ -166,7 +204,7 @@ LoopX control plane -> Codex Goal continuation -> Agent Turn
 | 任务特征 | 建议起点 |
 | --- | --- |
 | 单次、封闭、可低成本重做 | 普通会话 |
-| 同一 Host 内需要持续目标和恢复 | Codex Goal |
+| 同一 Host 内需要持续目标和 lifecycle | Codex Goal |
 | 有项目 Todo、权限 Gate、外部 effect、跨 Agent/Host 或调度恢复 | LoopX，可与 Codex Goal 组合 |
 
 选择最小足够层次。控制面本身也有维护成本；没有项目级问题时，不要为了“更 Agentic”而制造状态。

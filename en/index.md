@@ -20,7 +20,7 @@ features:
   - title: Control-plane foundations
     details: Learn sessions, durable state, work graphs, authority, governed Turns, recovery, and runtime boundaries.
   - title: Project onboarding
-    details: Connect an existing Git project and start work from Codex App or the visible Codex CLI TUI.
+    details: Delegate onboarding to an Agent, verify Goal, identity, and Git boundaries, then start from Codex App or the visible Codex CLI TUI.
   - title: Developer contributions
     details: Choose the right protocol and owner across the Control Plane, Capabilities, Providers, Hosts, projections, and Extensions.
 ---
@@ -37,7 +37,7 @@ the Kernel. It gives external developers a stable path for deciding:
 
 - whether a task needs only one session, a persistent Host goal, or a project-level control plane;
 - when Todo, Gate, Evidence, Quota, monitor, and recovery contracts add real value;
-- how to connect an existing project without committing local LoopX state;
+- how to delegate project onboarding to an Agent without surrendering Goal, identity, authority, or Git boundaries;
 - how to locate the right contribution owner, change an implementation, and validate it from protocols and
   invariants;
 - how to decide whether a capability belongs in core, a Capability, a Provider, a Host, a projection, or an
@@ -64,7 +64,6 @@ versioned or optional functionality, not the default shape of every contribution
 - Site generator: VitePress
 - Hosting: GitHub Pages
 - LoopX release anchor: `v0.4.1`
-- Runnable exercises: [loopx-book-labs](https://github.com/cocolord/loopx-book-labs)
 
 The official public protocols remain authoritative for protocol facts. Commands that change across
 releases remain authoritative in the release you use, its current `--help`, and official documentation.

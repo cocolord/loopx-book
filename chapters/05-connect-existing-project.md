@@ -3,6 +3,10 @@
 项目接入是一条独立实践路径。你不需要修改 LoopX Kernel，也不需要先开发 Extension。本章先建立
 项目状态和 Git 边界；后两章再分别从 Codex App 和 Codex CLI 启动。
 
+推荐做法是把接入任务直接交给当前 Agent。你负责给出目标、Host 和权限边界，Agent 负责检查
+仓库、读取当前 LoopX 命令表面、执行安全的接入步骤并返回可验收的报告。手动命令仍然重要，
+但主要用于理解 Agent 做了什么、复核结果和恢复失败。
+
 ## 成功标准
 
 完成后，你应该能观察到：
@@ -17,7 +21,166 @@
 
 这些本地文件是控制面状态，不是项目源码。不要把它们提交到公开仓库。
 
-## 1. 安装并检查 LoopX
+## 1. 让 Agent 帮你接入
+
+在目标仓库根目录打开你正在使用的 Agent 开发工具，把下面提示词中的目标和 Host 改成自己的
+情况后直接发送：
+
+```text
+请把当前 Git 项目安全接入 LoopX。
+
+目标：
+- 为这个项目建立一条可恢复、可验证的发布流程。
+- 当前 Host 是 Codex App。如果当前环境不是这个 Host，先告诉我，不要猜测。
+
+执行合同：
+1. 先只读检查项目根目录、当前分支、git status、.gitignore，以及是否已有
+   .loopx/registry.json、.codex/goals/ 或其他 LoopX 状态。不要覆盖、reset 或清理现有内容。
+2. 运行 loopx --version、loopx doctor，并读取本次实际需要的 --help。不要依赖记忆中的旧参数。
+   如果 LoopX 尚未安装，先报告缺失和官方 installer 将写入的位置，得到我授权后再安装；不要把
+   “找到安装命令”写成“安装已完成”。
+3. 如果已有 LoopX 状态，先读 loopx registry、loopx status 和相关 history。优先复用精确
+   goal_id；不要 force reconnect，不要按目标文字相似度选择 Goal。
+4. 确保 .loopx/、.codex/goals/ 和 .local/ 被 Git 忽略。如果这些目录已有项目用途或已被跟踪，
+   停下来报告冲突，不要擅自删除或 untrack。
+5. 对尚未连接的项目，先运行 loopx connect --dry-run，展示将创建或修改的状态；确认没有冲突后
+   再执行 loopx connect。已有 registry 时不要为了“重新开始”重复 bootstrap。
+6. 如果有多个可选 Goal，停在只读 goal_selection_gate，把 choices 和推荐依据交给我选择；
+   在选择前不要写 Todo、注册 Agent 或激活 Host loop。
+7. 这是新的执行者时，选择一个新的 public-safe agent_id，先 preview，再用当前 CLI 支持的
+   register-agent 命令执行并 read back。只有我明确要求 takeover 时才复用已有 agent_id。
+8. 使用 loopx start-goal --guided --project . 和明确的 goal text 生成 transaction packet。
+   Host 已知时显式传入正确的 --host-surface；只执行 packet 中与当前权限相符的步骤。
+9. 任何用户审批、外部写操作、凭据、权限扩大、Host 选择或 destructive Git 操作都必须停在
+   Gate，不能替我决定。
+10. 完成后验证 loopx status、todo list、history、quota should-run、git status，以及
+   git ls-files .loopx .codex/goals .local。
+11. 不要提交或推送。最后给我一份“接入回报”，列出 goal_id、agent_id、Host、创建或修改的文件、
+    当前 Todo/Gate、执行过的 mutation、验证结果、未解决问题和下一步。只完成 preview 时必须
+    明确写“尚未接入完成”。
+```
+
+这份提示词不是把控制权交给 Agent。它把可执行工作委托给 Agent，同时把以下决定留给你：
+
+- 多个 Goal 中选择哪一个；
+- 是否 takeover 已有 Agent identity；
+- 使用哪个 Host surface；
+- 是否允许外部写操作、凭据或更大 write scope；
+- 是否提交或推送仓库改动。
+
+### 接入回报应该长什么样
+
+一个可验收的接入回报至少包含：
+
+```yaml
+onboarding:
+  status: complete | blocked | preview_only
+  project_root: <repository root>
+  goal_id: <exact goal id>
+  agent_id: <fresh id or explicitly approved takeover id>
+  host_surface: <exact host or unresolved>
+changes:
+  - <changed path and why>
+gates:
+  - <decision still owned by the user>
+verification:
+  doctor: pass | fail
+  status_readback: pass | fail
+  local_state_ignored: pass | fail
+  tracked_private_state: []
+next_action: <one concrete next step>
+```
+
+不要接受“命令运行成功”作为唯一结论。Agent 应同时给出状态 readback 和 Git 隔离证据。
+
+### 示例：首次接入一个项目
+
+```text
+请按本章的 Agent 接入合同，把当前项目接入 LoopX。
+目标是“为每个发布候选建立构建、审批和 Pages 部署的可恢复流程”。
+当前 Host 是 Codex CLI visible TUI。使用新的 public-safe agent_id。
+不要提交、推送或触发发布；遇到 Goal 选择、权限和外部写操作时停下来让我决定。
+```
+
+### 示例：安全续接已有状态
+
+```text
+请先只读检查当前项目已有的 LoopX registry、Goal、Todo、Gate 和 history，再帮助我续接。
+优先复用精确 goal_id，但不要自动 takeover 任何已有 agent_id。
+如果存在多个 Goal、活动 lease、未完成 mutation 或 workspace 路由不一致，只给诊断和选择，
+不要写状态。不要提交或推送。
+```
+
+### 接入时启用已有 Extension
+
+项目接入还可以包含可选 Provider 的本地启用，但这不是 `connect` 的隐式副作用。以当前
+`loopx-finance-value-discovery` 为例，它是独立分发的零权限 Extension；只有你已经获得包含
+`packages/loopx-finance-value-discovery/` 的 LoopX 源码 checkout 或等价 provider 源码包时，
+Agent 才能按下面的路径安装。源码与 manifest 位于 LoopX 官方仓库的
+[`packages/loopx-finance-value-discovery`](https://github.com/huangruiteng/loopx/tree/main/packages/loopx-finance-value-discovery)。
+
+把这段补充到接入提示词：
+
+```text
+接入完成后，检查当前环境是否已经安装并启用 loopx-finance-value-discovery。
+
+- 先运行 loopx extension list --format json，不要根据目录存在猜测 activation state。
+- 如果 Extension 已安装且 enabled，执行一次只读 doctor readback；不要重复 install。
+- 如果已安装但 disabled，在解释将重新运行 doctor 后，preview 并执行 extension enable。
+- 如果尚未安装，先确认 provider source package 和
+  packages/loopx-finance-value-discovery/extension.toml 存在。
+- 修改 Python environment 属于本地环境写操作。先展示 pip install、extension install 和
+  doctor 命令，得到我授权后再执行。
+- package 必须安装到运行 `loopx` 的同一 Python environment，并让 provider entrypoint 出现在
+  当前 shell 的 `PATH`；否则 doctor 应返回 `entrypoint_missing`，不能绕过。
+- provider 源码包不存在时停下来报告：当前 release-only 环境不能隐式下载或启用这个 Extension。
+- 不要把它描述成行情采集器或投资建议能力。它只把调用方提供的 frozen public-safe evidence
+  归约成有界研究 packet，不执行网络读取、账户读取、交易或持续监控。
+- 完成后回报 package install、extension enabled、doctor ready 和一次示例 run 的独立结果。
+```
+
+对应的人工可读流程是：
+
+```bash
+# 1. 观察当前 activation state
+loopx extension list --format json
+
+# 2. 仅当 provider source package 存在且你允许修改当前 Python environment
+python3 -m pip install ./packages/loopx-finance-value-discovery
+
+# 如果使用 venv，先激活它，并确认 loopx 与 provider 来自同一 environment
+command -v loopx
+command -v loopx-finance-value-discovery
+
+# 3. 先 preview，再注册并激活已安装的 provider
+loopx extension install \
+  --manifest packages/loopx-finance-value-discovery/extension.toml \
+  --format json
+
+loopx extension install \
+  --manifest packages/loopx-finance-value-discovery/extension.toml \
+  --execute \
+  --format json
+
+# 4. 重新执行只读 readiness probe
+loopx extension doctor \
+  loopx-finance-value-discovery \
+  --execute \
+  --format json
+```
+
+如果 `extension list` 已显示该 Extension 安装但 `enabled=false`，不要再次 install：
+
+```bash
+loopx extension enable loopx-finance-value-discovery --format json
+loopx extension enable loopx-finance-value-discovery --execute --format json
+```
+
+实际调用还需要一个 `finance_value_discovery_input_v0` 文件。只有 `extension list`、executed
+doctor 和示例 `extension run --execute` 都成功，接入回报才可以写“Extension 可用”。下一节的
+placement 案例会解释为什么它没有注册同名 Capability。
+
+## 2. 安装并检查 LoopX
 
 要求：
 
@@ -42,7 +205,7 @@ live canary 或贡献 Kernel 的开发者。
 `loopx doctor` 是安装事实的入口。不要只以 `which loopx` 成功作为健康证明；doctor 还会检查
 release snapshot、Python import、skill 安装和 Host 集成。
 
-## 2. 建立忽略规则
+## 3. 建立忽略规则
 
 在连接前，将本地控制状态加入项目 `.gitignore`：
 
@@ -68,17 +231,19 @@ git check-ignore -v .codex/goals/example/ACTIVE_GOAL_STATE.md
 git check-ignore -v --no-index .loopx/registry.json
 ```
 
-## 3. 连接项目
+## 4. 理解 Agent 执行的连接流程
 
 从项目根目录运行：
 
 ```bash
+loopx connect --dry-run
 loopx connect
 loopx status
 ```
 
-`connect` 应复用已有 registry 和 active state。如果项目还没有足够状态，它会给出下一步；此时
-优先使用带明确任务的 guided start：
+先检查 dry-run 中的项目根目录、`goal_id`、状态文件和 Git 边界，再执行真实连接。`connect`
+应复用已有 registry 和 active state。如果项目还没有足够状态，它会给出下一步；此时优先使用
+带明确任务的 guided start：
 
 ```bash
 loopx start-goal \
@@ -106,13 +271,11 @@ Guided start 会把两个选择分开：
 ```bash
 loopx register-agent \
   --goal-id <selected-goal-id> \
-  --agent-id <new-public-safe-agent-id> \
-  --require-new
+  --agent-id <new-public-safe-agent-id>
 
 loopx register-agent \
   --goal-id <selected-goal-id> \
   --agent-id <new-public-safe-agent-id> \
-  --require-new \
   --execute
 ```
 
@@ -137,7 +300,7 @@ loopx start-goal --guided --project . \
 
 如果不确定 Host 类型，先省略 `--host-surface`。LoopX 会返回只读 selection gate，而不是猜测。
 
-## 4. 读取当前状态
+## 5. 读取当前状态
 
 先使用短路径：
 
@@ -162,7 +325,7 @@ loopx quota should-run --goal-id <goal-id> --agent-id <agent-id>
 不要把 `should_run: true` 简化为“立即执行任意动作”。还要读取 `interaction_contract`、
 `selected_todo`、capability gate、write scope 和 scheduler hint。
 
-## 5. 验证 Git 隔离
+## 6. 验证 Git 隔离
 
 连接后运行：
 
@@ -173,9 +336,6 @@ git ls-files .loopx .codex/goals .local
 
 第二条命令应无输出。如果输出了路径，说明本地控制状态已经被 Git 跟踪；仅增加 `.gitignore`
 不会自动解除跟踪。先检查是否包含应保留的历史，再从 index 中移除，避免误删本地状态。
-
-配套的可重置练习位于
-[project-onboarding](https://github.com/cocolord/loopx-book-labs/tree/main/project-onboarding)。
 
 ## 恢复路径
 

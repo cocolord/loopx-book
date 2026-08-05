@@ -14,7 +14,7 @@ After this chapter, you should be able to:
 
 ## 1. Install the Python package
 
-From the Labs root:
+From the workspace that contains `standalone-extension/`:
 
 ```bash
 python3 -m venv .venv
@@ -164,7 +164,7 @@ loopx extension rollback loopx-text-stats --execute --format json
 Rollback probes the previous validated revision before switching. It is a lifecycle transition over
 activation state, not an arbitrary Git checkout.
 
-## 7. Isolate exercise state
+## 7. Isolate example state
 
 CI and tutorials can use `--state-file` to avoid modifying the user's default runtime state:
 
@@ -179,7 +179,7 @@ loopx extension install \
   --format json
 ```
 
-The temporary file may contain local runtime identity and must not be committed to Labs.
+The temporary file may contain local runtime identity and must not be committed to any public repository.
 
 ## When standalone `run` is not valid
 

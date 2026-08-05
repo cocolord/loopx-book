@@ -1,8 +1,8 @@
 # Validation, compatibility, and safety
 
 A Dev Book is complete only when readers can reproduce its paths, recognize success, recover from failure,
-and avoid crossing authority boundaries. This chapter closes project onboarding, developer contributions,
-and Labs with one validation model. Extension packages use separate lifecycle checks, but remain one
+and avoid crossing authority boundaries. This chapter closes project onboarding and developer
+contributions with one validation model. Extension packages use separate lifecycle checks, but remain one
 developer-contribution path.
 
 ## What you should learn
@@ -12,7 +12,7 @@ After this chapter, you should be able to:
 - choose the right validation layer for onboarding and different contribution surfaces;
 - distinguish compatibility, readiness, and domain correctness;
 - scan private state before publication;
-- route content to the book, Labs, official documentation, or project sources of truth.
+- route content to the book, official documentation, or project sources of truth.
 
 ## Four validation layers
 
@@ -43,13 +43,13 @@ npm audit --audit-level=moderate
 Do not preserve the override mechanically during a VitePress upgrade. Inspect the new dependency graph and
 `@vitejs/plugin-vue` peer range, then use a clean install, build, and audit to decide.
 
-Labs:
+Standalone Extension example from this book:
 
 ```bash
 python3 -m venv .venv
 . .venv/bin/activate
 python3 -m pip install -e './standalone-extension[test]'
-./scripts/smoke.sh
+python3 -m pytest standalone-extension
 ```
 
 ### 2. Product-surface validation
@@ -144,7 +144,13 @@ loopx check \
   --scan-path en/
 ```
 
-Labs should also scan all runnable paths, including `issue-to-pr/`.
+If you generated runnable directories from a book example, scan those paths too:
+
+```bash
+loopx check \
+  --scan-path README.md \
+  --scan-path standalone-extension/
+```
 
 Review manually for:
 
@@ -161,9 +167,9 @@ Review manually for:
 
 | Content | Authoritative home |
 | --- | --- |
-| Learning order, concept explanation, and recovery model | `loopx-book` |
-| Runnable code, fixtures, and smoke tests | `loopx-book-labs` |
+| Learning order, concept explanation, recovery model, and scaffold guidance | `loopx-book` |
 | Complete CLI arguments, protocols, and release behavior | Official LoopX repository |
+| Product code, durable fixtures, and smoke tests | The corresponding LoopX or Extension source repository |
 | Current Goal, Todo, Gate, and evidence for a project | Project-local LoopX state |
 | Commits, PRs, CI, and external resources | The corresponding external system |
 
@@ -180,7 +186,7 @@ After each LoopX minor release, review:
 - Codex App heartbeat and Codex CLI Goal activation;
 - core protocols, state machines, bounded-context ownership, and the quality catalog;
 - Extension manifest, doctor, run, and lifecycle;
-- Labs smoke.
+- whether book steps still reproduce on the current official scaffold and command surface.
 
 Update theory chapters only when the public contract changes, not when internal files are reorganized.
 
@@ -196,20 +202,12 @@ Update theory chapters only when the public contract changes, not when internal 
   projections, documentation, and fixtures.
 - [ ] Contribution guidance is organized around placement, protocols, invariants, and evidence rather than
   function lists.
-- [ ] Extension is presented as a contribution subpath and maps to runnable Labs.
+- [ ] Extension is presented as a contribution subpath and its example remains reproducible on the current
+  official scaffold.
 - [ ] `npm run docs:build` passes.
+- [ ] `npm run check:publication` and the browser publication check pass.
 - [ ] Internal links and the public-boundary scan pass.
 - [ ] The bilingual first screen has owner approval.
-
-### Labs
-
-- [ ] A clean virtual environment can install the Lab.
-- [ ] Onboarding and Issue-to-PR fixtures reset cleanly.
-- [ ] Candidate, context, feasibility, failed-before, and passed-after checks pass.
-- [ ] Request and response schema tests pass.
-- [ ] Managed install, doctor, run, disable, enable, upgrade, and rollback pass.
-- [ ] No credentials, private state, or machine paths are tracked.
-- [ ] The book and Labs link to each other.
 
 Only after these checks should GitHub Pages publish from `main`. Pages is the display surface, not the source
 of content truth or LoopX state.

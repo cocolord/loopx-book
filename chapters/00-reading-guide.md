@@ -47,8 +47,8 @@ lifecycle 选择，不是所有贡献的默认终点。
 命令片段会标明其性质：
 
 - **可直接运行：** 已在标注的 LoopX 版本上核对命令表面；
-- **从 Labs 摘取：** 完整文件位于
-  [loopx-book-labs](https://github.com/cocolord/loopx-book-labs)；
+- **基于官方 scaffold：** 示例只给出完成当前任务所需的领域改动、协议和验证，不依赖单独的
+  配套练习仓库；
 - **为解释而简化：** 用于说明状态关系，不应直接写入生产配置。
 
 ## 权威来源
@@ -58,8 +58,7 @@ lifecycle 选择，不是所有贡献的默认终点。
 | 内容 | 权威来源 |
 | --- | --- |
 | CLI 参数、协议和 runtime 行为 | LoopX 发布物、`--help` 与官方仓库 |
-| 可运行练习 | `loopx-book-labs` |
-| 学习路径、概念解释与取舍建议 | 本书 |
+| 学习路径、scaffold 导读、概念解释与取舍建议 | 本书 |
 | 你的项目事实 | Git、CI、外部服务和项目自己的事实源 |
 
 当本书与当前发布版本冲突时，先以发布物为准，再提交文档修正。不要为了让教程“跑通”而绕过
@@ -77,7 +76,7 @@ lifecycle 选择，不是所有贡献的默认终点。
 - Codex App heartbeat 与 Codex CLI visible Goal；
 - Extension manifest 与生命周期命令。
 
-运行练习前先执行：
+运行书中命令前先执行：
 
 ```bash
 loopx --version
@@ -92,4 +91,4 @@ loopx doctor
 开发者贡献部分覆盖外部贡献者需要的 placement、协议地图、规则修改、Capability/Provider、
 Host/Runner、Projection/Docs/fixtures、Extension lifecycle、验证与 PR，不复制完整九讲核心
 维护者课程，也不提供完整 CLI reference。生产级 effectful provider、企业内部案例和 benchmark
-live operation 不进入当前主线。`public-safe narrative` 案例将在 Labs 中作为后续练习出现。
+live operation 不进入当前主线。需要这些能力时，应回到官方源码、协议和具体项目的事实源。

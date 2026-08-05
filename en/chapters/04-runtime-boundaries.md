@@ -238,7 +238,7 @@ Project control state commonly contains material that must not be committed publ
 - machine paths, internal links, and private organizational narrative;
 - unredacted external evidence.
 
-The onboarding Lab excludes these directories from Git:
+The project-onboarding chapter requires these directories to stay outside Git:
 
 ```text
 .loopx/

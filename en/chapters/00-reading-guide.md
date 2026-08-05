@@ -50,8 +50,8 @@ Each chapter prioritizes four questions:
 Command snippets fall into three categories:
 
 - **Runnable:** checked against the stated LoopX baseline.
-- **Taken from Labs:** the complete artifact lives in
-  [loopx-book-labs](https://github.com/cocolord/loopx-book-labs).
+- **Based on the official scaffold:** the example focuses on the domain changes, protocol, and validation
+  needed for the task without a separate exercise repository.
 - **Simplified for explanation:** illustrates a state relationship and must not be pasted into production
   configuration.
 
@@ -64,8 +64,7 @@ maintained as a separate product specification.
 | Subject | Authority |
 | --- | --- |
 | CLI arguments, protocols, and runtime behavior | LoopX releases, current `--help`, and the official repository |
-| Runnable exercises | `loopx-book-labs` |
-| Learning path, explanations, and trade-off guidance | This book |
+| Learning path, scaffold guidance, explanations, and trade-off guidance | This book |
 | Facts about your project | Git, CI, external services, and project-owned sources |
 
 When the book and a current release disagree, follow the release first and report the documentation drift.
@@ -83,7 +82,7 @@ different revisions, so verify these surfaces against your actual environment:
 - Codex App heartbeat and visible Codex CLI Goal behavior;
 - Extension manifest and lifecycle commands.
 
-Before running a Lab:
+Before running commands from the book:
 
 ```bash
 loopx --version
@@ -100,4 +99,5 @@ The developer-contribution path covers placement, protocol maps, rule changes, C
 Hosts and Runners, projections, documentation and fixtures, Extension lifecycle, validation, and PR
 delivery. It does not duplicate the complete nine-lesson maintainer course or a full CLI reference.
 Production effectful Providers, private organizational cases, and live benchmark operation remain outside
-the main path. A later `public-safe narrative` exercise belongs in Labs.
+the main path. Use official source, protocol documentation, and the target project's own facts for those
+workflows.

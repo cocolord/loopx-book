@@ -7,7 +7,7 @@
 
 本书先用六章建立长程 Agent 控制面的基础模型，再提供两条实践主线：
 
-- 把已有 Git 项目接入 LoopX；
+- 让 Agent 把已有 Git 项目安全接入 LoopX，并由读者验收结果；
 - 给 LoopX 做开发者贡献，包括 Control Plane、Capability、Provider、Host/Runner、
   Projection/Docs/fixtures，以及 Extension。
 
@@ -47,7 +47,7 @@ Chrome/Chromium 路径；非标准安装可通过 `CHROME_PATH` 指定。GitHub 
 ## 内容边界
 
 - 本书拥有学习路径、概念解释和任务导向教程；
-- [loopx-book-labs](https://github.com/cocolord/loopx-book-labs) 拥有可运行练习；
+- 书内示例以当前官方 scaffold 和公开协议为基线，不依赖单独的配套练习仓库；
 - [LoopX 官方仓库](https://github.com/huangruiteng/loopx) 拥有 CLI、协议、源码和版本化行为。
 
 当前内容以 LoopX GitHub release `v0.4.1` 为发布锚点；本地命令示例已在 `loopx 0.4.0`

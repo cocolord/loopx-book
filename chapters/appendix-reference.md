@@ -87,8 +87,9 @@ loopx start-goal --guided --project . \
 
 初次运行可以先省略 `--goal-id`、`--agent-id` 或 `--host-surface`，分别获得只读 Goal、fresh Agent
 identity 或 Host selection gate。选择后使用 packet 给出的精确命令重跑；不要根据相似文本或唯一
-已有 Agent 猜测。新 identity 的推荐注册路径使用 `register-agent --require-new` preview，再以
-`--execute` 原子写入；已有 identity 只用于用户明确授权的 takeover。
+已有 Agent 猜测。新 identity 的推荐注册路径使用 `register-agent --goal-id <goal-id>
+--agent-id <new-agent-id>` preview，再以 `--execute` 原子写入；已有 identity 只用于用户明确授权
+的 takeover。
 
 ## Scheduler 收敛入口
 
@@ -133,4 +134,3 @@ loopx extension rollback <extension-id>
 - [LoopX repository](https://github.com/huangruiteng/loopx)
 - [Getting Started](https://github.com/huangruiteng/loopx/blob/main/docs/guides/getting-started.md)
 - [Extensions and Capabilities](https://github.com/huangruiteng/loopx/blob/main/docs/reference/extensions.md)
-- [LoopX Book Labs](https://github.com/cocolord/loopx-book-labs)

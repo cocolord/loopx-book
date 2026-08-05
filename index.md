@@ -20,7 +20,7 @@ features:
   - title: 控制面基础
     details: 从 Session、Goal 和状态投影出发，理解工作图、权限、Turn、恢复与运行边界。
   - title: 项目接入
-    details: 把已有 Git 项目接入 LoopX，并分别从 Codex App 与 Codex CLI 启动。
+    details: 把接入任务交给 Agent，验收 Goal、identity 与 Git 边界，再从 Codex App 或 Codex CLI 启动。
   - title: 开发者贡献
     details: 按协议和 owner 选择 Control Plane、Capability、Provider、Host、Projection 或 Extension 等贡献路径。
 ---
@@ -36,7 +36,7 @@ features:
 
 - 当前任务只需要一次普通会话，还是需要持久 Goal；
 - 什么时候需要 LoopX 的项目级 Todo、Gate、Evidence、Quota 与恢复合同；
-- 如何把自己的项目接入 LoopX；
+- 如何让 Agent 安全接入自己的项目，并验收它没有越过 Goal、identity、权限与 Git 边界；
 - 如何从协议与不变量出发定位贡献 owner、修改实现并组织验证；
 - 如何判断一项能力应进入 Core、Capability、Provider、Host、Projection，还是作为 Extension
   独立交付。
@@ -58,8 +58,7 @@ Extension 只是可独立版本化和交付的一种路径。
 - 正文格式：Markdown；
 - 站点生成器：VitePress；
 - 在线发布：GitHub Pages；
-- LoopX 发布锚点：`v0.4.1`；
-- 可运行练习：[loopx-book-labs](https://github.com/cocolord/loopx-book-labs)。
+- LoopX 发布锚点：`v0.4.1`。
 
 协议解释以 LoopX 官方公开合同为事实源。易变化的命令仍以对应发布物、官方文档和当前
 `--help` 为准；本书负责教学顺序与心智模型，不成为另一份完整命令参考。

@@ -26,6 +26,28 @@ const cases = [
     expectedPagerCount: 2,
   },
   {
+    name: '中文项目接入',
+    route: '/chapters/05-connect-existing-project',
+    counterpart: '/en/chapters/05-connect-existing-project',
+    expectedPagerCount: 2,
+    expectedArticleTerms: [
+      '让 Agent 帮你接入',
+      '接入时启用已有 Extension',
+      'loopx-finance-value-discovery',
+    ],
+  },
+  {
+    name: '中文 Extension placement',
+    route: '/chapters/08-extension-placement',
+    counterpart: '/en/chapters/08-extension-placement',
+    expectedPagerCount: 2,
+    expectedArticleTerms: [
+      '案例：财经发现 Extension',
+      'capability_id',
+      'entrypoint_missing',
+    ],
+  },
+  {
     name: '中文末章',
     route: '/chapters/appendix-reference',
     counterpart: '/en/chapters/appendix-reference',
@@ -42,6 +64,28 @@ const cases = [
     route: '/en/chapters/source-protocol-map',
     counterpart: '/chapters/source-protocol-map',
     expectedPagerCount: 2,
+  },
+  {
+    name: 'English project onboarding',
+    route: '/en/chapters/05-connect-existing-project',
+    counterpart: '/chapters/05-connect-existing-project',
+    expectedPagerCount: 2,
+    expectedArticleTerms: [
+      'Delegate onboarding to an Agent',
+      'Enable an existing Extension during onboarding',
+      'loopx-finance-value-discovery',
+    ],
+  },
+  {
+    name: 'English Extension placement',
+    route: '/en/chapters/08-extension-placement',
+    counterpart: '/chapters/08-extension-placement',
+    expectedPagerCount: 2,
+    expectedArticleTerms: [
+      'Case: the Finance value-discovery Extension',
+      'capability_id',
+      'entrypoint_missing',
+    ],
   },
   {
     name: 'English last chapter',
@@ -305,6 +349,14 @@ function validatePage(testCase, html) {
     expect(
       !article.includes(`**${term}**`),
       `${testCase.name}: literal Markdown markers leaked around "${term}"`,
+      failures,
+    )
+  }
+
+  for (const term of testCase.expectedArticleTerms ?? []) {
+    expect(
+      article.includes(term),
+      `${testCase.name}: expected article content "${term}" is missing`,
       failures,
     )
   }

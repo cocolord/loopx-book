@@ -28,8 +28,42 @@ const chapters = [
 ]
 
 const locales = [
-  { name: '中文', prefix: '', outlineLabel: '本页目录' },
-  { name: 'English', prefix: '/en', outlineLabel: 'On this page' },
+  {
+    name: '中文',
+    prefix: '',
+    outlineLabel: '本页目录',
+    agentOnboardingMarkers: ['让 Agent 帮你接入', '接入回报', '不要提交或推送'],
+    financeExtensionOnboardingMarkers: [
+      '接入时启用已有 Extension',
+      'loopx-finance-value-discovery',
+      '源码包',
+    ],
+    financePlacementMarkers: [
+      '财经发现 Extension',
+      'capability_id',
+      '不自动拉取行情',
+    ],
+  },
+  {
+    name: 'English',
+    prefix: '/en',
+    outlineLabel: 'On this page',
+    agentOnboardingMarkers: [
+      'Delegate onboarding to an Agent',
+      'onboarding report',
+      'Do not commit or push',
+    ],
+    financeExtensionOnboardingMarkers: [
+      'Enable an existing Extension during onboarding',
+      'loopx-finance-value-discovery',
+      'provider source package',
+    ],
+    financePlacementMarkers: [
+      'Finance value-discovery Extension',
+      'capability_id',
+      'does not fetch market data',
+    ],
+  },
 ]
 
 const failures = []
@@ -152,6 +186,30 @@ for (const locale of locales) {
       `${pageLabel} 缺少本页目录挂载点、locale 标题或章节标题源`,
     )
 
+    if (slug === '05-connect-existing-project') {
+      for (const marker of locale.agentOnboardingMarkers) {
+        expect(
+          html.includes(marker),
+          `${pageLabel} 缺少 Agent 辅助接入合同标记 ${marker}`,
+        )
+      }
+      for (const marker of locale.financeExtensionOnboardingMarkers) {
+        expect(
+          html.includes(marker),
+          `${pageLabel} 缺少接入期 Extension 启用标记 ${marker}`,
+        )
+      }
+    }
+
+    if (slug === '08-extension-placement') {
+      for (const marker of locale.financePlacementMarkers) {
+        expect(
+          html.includes(marker),
+          `${pageLabel} 缺少财经发现 placement 标记 ${marker}`,
+        )
+      }
+    }
+
     const previous = chapters[index - 1]
     const next = chapters[index + 1]
     if (previous) {
@@ -176,6 +234,10 @@ for (const locale of locales) {
 
 for (const htmlPath of await listHtmlFiles(distDir.pathname)) {
   const html = await readFile(htmlPath, 'utf8')
+  expect(
+    !html.includes('loopx-book-labs') && !/>Labs?</.test(html),
+    `${htmlPath.slice(distDir.pathname.length)} 仍包含已移除的 Labs 路径或导航`,
+  )
   const internalHrefs = [
     ...html.matchAll(/href="(\/loopx-book(?:\/[^"#?]*)?(?:[?#][^"]*)?)"/g),
   ].map((match) => match[1])

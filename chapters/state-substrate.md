@@ -173,6 +173,62 @@ Goal lifecycle 仍由 Todo、Gate、events 与 acceptance 组合决定。
 “某个页面显示 PR 已合并”可能只是旧 projection；“某次 run 说测试通过”也可能绑定旧 commit。
 只有重新读取外部事实并检查 revision、freshness 与 scope，才能把观察用于当前转换。
 
+## 存储介质不是 authority contract
+
+LoopX 当前是 **本地优先** 的控制面：项目 registry、active-state workbench、event/run history 和
+runtime state 位于项目或用户本地。这个事实不意味着“Markdown 文件本身就是 authority”，也不
+意味着把目录换成数据库就自动获得正确的并发与恢复语义。
+
+[`event_sourced_state_contract_v0`](https://github.com/huangruiteng/loopx/blob/main/docs/reference/protocols/event-sourced-state-contract-v0.md)
+明确允许 JSONL、SQLite 或其他 local-first append-only 实现，只要它们保持：
+
+- stable event id 与 ordered replay；
+- idempotent append；
+- projection head 与 event-store head 对齐；
+- public-safe、local-private 与 private-pointer 分区；
+- Markdown 继续作为 workbench/projection，而不是任意写入口。
+
+[`local_state_write_correctness_v0`](https://github.com/huangruiteng/loopx/blob/main/docs/reference/protocols/local-state-write-correctness-v0.md)
+当前标记为 public-safe protocol draft。它把更强的写入正确性目标分成
+`prepare -> preview -> apply -> record -> project`：
+
+- 同一 `idempotency_key` 不应重复产生逻辑 effect；
+- `expected_revision` 不匹配时应 fail closed 或从新 revision 重算非重叠 patch；
+- foreign/expired lease 不应被静默清除；
+- lock 默认以 Goal 为目标边界，只有单 Todo 且不影响共享顺序时才可更窄；
+- 外部写、凭据、production 和 private read 仍需独立 Gate。
+
+当前 Todo lifecycle 命令已经在 active-state file lock 下重读并写回，preview 也会暴露 write
+intent。协议文档同时明确：hard idempotency、统一 optimistic CAS 和 lease conflict enforcement
+仍按 writer 分阶段 promotion，不能假设所有 writer 已完整执行上述 Draft。
+
+因此，文件、SQLite 或未来 provider 回答的是“字节存在哪里”；event、revision、CAS、lease 与
+authority 回答的是“哪次状态转换合法”。
+
+### 当前已发布与仍在设计中的边界
+
+当前公开架构把 CLI 作为 compatibility baseline，并把 local server/daemon 描述为 roadmap。
+多 Host 协作、离线队列和 shared control plane 的详细方案存在于状态为 **Draft** 的 RFC 中，不能
+写成当前安装后即可用的云端功能。
+
+当前可以依赖：
+
+- 本地项目状态与 global registry projection；
+- Todo lifecycle writer 的 active-state file lock、preview/readback 和当前已实现的幂等行为；
+- registered peer、soft claim、可选 task lease 与独立 worktree guard；
+- 不同 Host 通过同一 registry/Goal 读取并受控写回。
+
+当前不应承诺：
+
+- 多台设备自动共享一个在线 authority；
+- 离线设备可以新 claim、complete、续 lease 或执行 protected write；
+- 把项目目录放进同步盘就得到一致的分布式状态；
+- NoKV、数据库或 IM 自动替代 LoopX lifecycle owner。
+
+如果要实现跨设备控制面，应保留一个 canonical LoopX authority，要求 revision-bound、幂等的受控
+命令与 receipt，并把消息传递、上下文记忆和状态 authority 分开。直到该 Draft 经过发布验证，
+Dev Book 只教授这些协议边界，不提供“云端模式已可用”的操作步骤。
+
 ## 历史产物的三层完整性
 
 LoopX 可以让研究、验证和决策产物不被静默改写，但这不等于旧结论永远适用于当前状态。判断一条

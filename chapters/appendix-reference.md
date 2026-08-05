@@ -91,6 +91,77 @@ identity 或 Host selection gate。选择后使用 packet 给出的精确命令�
 --agent-id <new-agent-id>` preview，再以 `--execute` 原子写入；已有 identity 只用于用户明确授权
 的 takeover。
 
+## 安全升级 runbook
+
+no-clone 安装的主路径是 `loopx update`，不是手工覆盖 release snapshot：
+
+先用 `loopx update --check` 只读检查，再用 `loopx update --dry-run` 预览；两步都不会安装。
+
+正常升级只需要：
+
+```bash
+loopx update --check
+loopx update --dry-run
+loopx update --execute
+loopx doctor
+```
+
+下面的完整流程用于需要保留升级前证据、检查 Host/Extension migration 或准备回滚的场景。
+
+```bash
+# 1. 记录当前事实
+command -v loopx
+loopx --version
+loopx --format json doctor > /tmp/loopx-doctor-before.json
+
+# 2. 检查 stable ref、freshness 与推荐动作
+loopx update --check
+
+# 3. 预览将安装的 ref、release id 与回滚目标
+loopx update --dry-run
+
+# 4. 执行 archive installer，并由 update 运行 post-update doctor
+loopx update --execute
+
+# 5. 重验命令、skill、Host 与项目状态
+loopx --version
+loopx doctor
+loopx slash-commands
+loopx slash-commands --install
+loopx status
+```
+
+默认来源是公开 `stable` ref。`--ref main` 是 maintainer/dev qualification 路径，不应作为普通用户
+默认升级。`update --execute` 安装 release snapshot 并运行 doctor；成功退出不代表每个 Host
+automation、Goal migration 或 Extension Provider 都已更新。
+
+升级后按使用面继续验证：
+
+- `loopx doctor`：wrapper、release manifest、Python import、skill delivery 与 Host integration；
+- `loopx slash-commands --install`：只更新 LoopX 管理的 command files，用户同名文件会被跳过；
+- `loopx quota should-run` / `loopx upgrade-plan`：检查 peer runtime 或 heartbeat prompt migration；
+- `loopx extension list` + executed `extension doctor`：每个 active revision 的 readiness；
+- `loopx status` / `history`：项目 registry、Goal、Todo 与 projection 未漂移。
+
+升级前涉及 risky migration、scheduler 或 runtime repair 时，可先 preview 并执行私有本地备份：
+
+```bash
+loopx backup-state --project .
+loopx backup-state --project . --execute
+```
+
+备份包含本地 runtime、项目状态和可达 registry，是 private recovery material，不应提交或公开。
+
+如果新 release 出现阻塞问题，先读当前 `loopx update --help`，再选择已记录的 release id 或：
+
+```bash
+loopx update --rollback previous
+loopx doctor
+```
+
+回滚只恢复 LoopX release snapshot。已经由新版本写入的项目状态、外部 effect 或独立 Extension
+package 可能需要各自的 migration/rollback；不要把 wrapper 回滚描述成全系统回滚。
+
 ## Scheduler 收敛入口
 
 当 Codex App packet 报告 `stateful_backoff.apply_needed=true` 时，先让 Host 应用

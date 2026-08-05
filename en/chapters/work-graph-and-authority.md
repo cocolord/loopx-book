@@ -236,6 +236,72 @@ A handoff also does not copy the transcript. A bounded handoff should let the re
 The receiver reruns current guards. The prior Agent's receipt does not grant source permission to the new
 Agent, and an old workspace observation does not prove the environment stayed unchanged.
 
+## Multi-repository and parallel work
+
+One business outcome may span several Git repositories. That does not require several unrelated Goals when
+acceptance and decision authority belong to one result. Keep one Goal and give every Agent Todo explicit
+repository scope:
+
+```text
+todo_id
+task_repository = git:github.com/owner/repo
+required_write_scopes = src/**, tests/**
+claimed_by = <registered-peer>
+continuation_policy = independent_handoff | same_agent_non_delivery
+```
+
+`task_repository` is a credential-free repository identity. It selects the repository for workspace
+isolation and **does not grant write authority**. Claims, leases, Goal boundaries, and repository
+maintainer policy still apply.
+
+The current
+[`peer_agent_runtime_v1`](https://github.com/huangruiteng/loopx/blob/main/docs/reference/protocols/peer-agent-runtime-v1.md)
+and `workspace_guard` require a repository-writing selected Todo to run from a linked independent worktree
+whose origin matches `task_repository`. A matching repository is necessary but not sufficient: the
+canonical checkout may still be rejected.
+
+### Work that can run in parallel
+
+| Work type | Parallel policy |
+| --- | --- |
+| Research, source location, triage, read-only review | Fan out, then collect bounded evidence |
+| Implementation in different repositories | Bind each Todo to its own `task_repository` and worktree |
+| One repository with disjoint write scopes | Parallelize only when scopes are proven disjoint and validation is independent |
+| One file or shared schema/state machine | Default to serial work or split an owner/seam first |
+| External effects, merge, or publish | Keep scoped Gates and repository policy authoritative |
+
+A claim is a soft owner, not a lock. Only Hosts with a demonstrated concurrent-write problem need the
+optional `task_lease_v0`. Current quota does not automatically consume a hard lease, so documentation must
+not imply that a server already arbitrates every concurrent write.
+
+### Multi-repository example
+
+Suppose one release changes four repositories:
+
+```text
+Goal: ship-cross-repo-release
+├── Todo A -> repo-a -> agent-a -> worktree-a
+├── Todo B -> repo-b -> agent-b -> worktree-b
+├── Todo C -> repo-c -> agent-c -> worktree-c
+└── Todo D -> integration verification -> waits for A/B/C evidence
+```
+
+A, B, and C may run in parallel. D cannot infer readiness from prose. Each implementation Todo writes back
+an exact revision, validation, and completion evidence; D enters the frontier only after dependencies and
+fresh readback agree.
+
+Cross-repository PR conditions also need repository identity. `resume_when=pr_merged:#123` is satisfied
+only when the Todo's GitHub `task_repository` matches the merge-event repository. Use
+`pr_merged:owner/repo#123` across repositories. Missing repository identity fails closed instead of
+guessing from the PR number.
+
+### Automation that is not currently shipped
+
+The product does not promise “point LoopX at a root folder and it automatically runs four Goals in
+parallel,” nor a cloud coordinator that chooses devices and claims work. Bounded multi-agent orchestration
+can enable child-agent planning, while peer identity, claim, workspace guard, Gate, and writeback remain
+per-Todo contracts. Cross-device online authority remains a Draft design boundary.
+
 ## Three ways a work item leaves the active frontier
 
 A Todo should leave the active frontier through one of these outcomes:

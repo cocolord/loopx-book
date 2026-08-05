@@ -9,6 +9,11 @@ the goal, Host, and authority boundaries. The Agent inspects the repository, rea
 surface, executes the safe onboarding steps, and returns evidence you can review. The manual commands
 remain useful for understanding, verification, and recovery.
 
+::: tip Fast reading path
+For basic onboarding, follow sections 1–6 and stop after Git-isolation verification. Read section 7 only
+when the project needs an optional Capability or Extension.
+:::
+
 ## Observable success
 
 When onboarding is complete:
@@ -119,80 +124,6 @@ the project. Prefer an exact existing goal_id, but do not automatically take ove
 If you find multiple Goals, an active lease, an unfinished mutation, or a workspace-route mismatch, return
 diagnosis and choices only. Do not write state, commit, or push.
 ```
-
-### Enable an existing Extension during onboarding
-
-Project onboarding may also activate an optional Provider locally, but `connect` must not do that
-implicitly. The current `loopx-finance-value-discovery` package is a separately distributed,
-zero-permission Extension. An Agent can install it only when you already have a LoopX source checkout, or
-an equivalent provider source package, containing
-[`packages/loopx-finance-value-discovery`](https://github.com/huangruiteng/loopx/tree/main/packages/loopx-finance-value-discovery).
-
-Append this contract to the onboarding prompt:
-
-```text
-After project connection is complete, inspect whether loopx-finance-value-discovery is installed and
-enabled in the current environment.
-
-- Run loopx extension list --format json first. Do not infer activation from a directory.
-- If the Extension is installed and enabled, execute a read-only doctor probe; do not install it again.
-- If it is installed but disabled, explain that enable reruns doctor, then preview and execute enable.
-- If it is absent, first confirm that the provider source package and
-  packages/loopx-finance-value-discovery/extension.toml exist.
-- Changing the Python environment is a local environment write. Show the pip install, extension install,
-  and doctor commands and wait for my authority before execution.
-- Install the package into the same Python environment that runs `loopx`, and make the Provider entrypoint
-  visible on the current shell's `PATH`. Otherwise doctor should report `entrypoint_missing`; do not
-  bypass it.
-- If the provider source package is unavailable, stop and report that a release-only environment cannot
-  download or enable this Extension implicitly.
-- Do not describe it as a market-data collector or investment-advice capability. It only reduces frozen
-  public-safe evidence supplied by the caller into a bounded research packet. It performs no network,
-  account, trading, or continuous-monitoring action.
-- Report package installation, Extension enablement, doctor readiness, and one example run separately.
-```
-
-The equivalent manual flow is:
-
-```bash
-# 1. Observe activation state
-loopx extension list --format json
-
-# 2. Only when the provider source package exists and Python-environment writes are authorized
-python3 -m pip install ./packages/loopx-finance-value-discovery
-
-# When using a venv, activate it and confirm both commands resolve from that environment
-command -v loopx
-command -v loopx-finance-value-discovery
-
-# 3. Preview, then register and activate the installed Provider
-loopx extension install \
-  --manifest packages/loopx-finance-value-discovery/extension.toml \
-  --format json
-
-loopx extension install \
-  --manifest packages/loopx-finance-value-discovery/extension.toml \
-  --execute \
-  --format json
-
-# 4. Execute the read-only readiness probe
-loopx extension doctor \
-  loopx-finance-value-discovery \
-  --execute \
-  --format json
-```
-
-If `extension list` reports the Extension as installed with `enabled=false`, do not install it again:
-
-```bash
-loopx extension enable loopx-finance-value-discovery --format json
-loopx extension enable loopx-finance-value-discovery --execute --format json
-```
-
-Invocation also needs a `finance_value_discovery_input_v0` file. The onboarding report may say “Extension
-available” only after `extension list`, an executed doctor, and an example `extension run --execute` all
-succeed. The placement case in the next section explains why this package does not register a capability
-with the same name.
 
 ## 2. Install and inspect LoopX
 
@@ -353,6 +284,148 @@ git ls-files .loopx .codex/goals .local
 The second command should print nothing. If it lists a path, Git is already tracking local control state;
 adding `.gitignore` does not untrack it. Inspect the history before removing anything from the index so you
 do not delete valuable local state.
+
+## 7. Optional: enable Providers and Goal features
+
+Basic onboarding is complete. Continue only when this project needs an optional capability.
+
+Start with discovery and Goal configuration. Continue to the Extension example only when you have a
+separately distributed Provider to activate.
+
+### Discover Capabilities and optional features
+
+The Capability catalog, Goal feature configuration, and Extension activation are three different
+surfaces:
+
+```bash
+# 1. Product Capabilities implemented by the current release
+loopx capability list --format json
+loopx capability show <capability-id> --format json
+
+# 2. Optional features and boundaries configured for this Goal
+loopx --format json configure-goal --goal-id <goal-id>
+
+# 3. Extension Providers installed and activated in this environment
+loopx extension list --format json
+```
+
+`capability list/show` is a read-only catalog. It reports the caller outcome, entry command, protocol,
+smoke, and boundary. It does not modify the Goal or install a Provider. Passing
+`--extension-manifest` only declares a Provider for that catalog read; `declared=true` does not mean
+installed, enabled, or ready.
+Use `loopx capability list` for discovery and
+`loopx capability show <capability-id>` for one contract.
+
+`configure-goal` without a setting flag is also read-only and returns the current on-demand feature
+catalog. There is no generic “enable any capability id” command. Every default-off feature has explicit
+configuration fields and boundaries. Read the Goal catalog with
+`loopx --format json configure-goal --goal-id <goal-id>`. For example:
+
+```bash
+loopx configure-goal \
+  --goal-id <goal-id> \
+  --change-quality-enabled
+
+loopx configure-goal \
+  --goal-id <goal-id> \
+  --change-quality-enabled \
+  --execute
+```
+
+For `multi_subagent`, Explore Graph, Explore Harness, Reward Memory, Lark inbox, and other optional
+features, read the current `configure-goal --help` and the catalog's exact delta instead of guessing flags
+from feature names. Use this sequence:
+
+1. inspect the read-only catalog;
+2. preview without `--execute`;
+3. inspect `before`, `after`, `changed_fields`, and the boundary;
+4. apply with explicit `--execute`;
+5. reread Goal config, status/quota, and relevant Provider readiness.
+
+Also keep the two Todo capability fields separate:
+
+- `required_capabilities`: Host or runtime abilities that must already exist for this execution; a missing
+  requirement Gates that candidate;
+- `target_capabilities`: an ability this Todo is building, repairing, or validating; a missing target may
+  enter repair mode and must not make the repair Todo impossible to run.
+
+“Visible in catalog,” “enabled for this Goal,” “Provider doctor-ready,” and “available in this turn” are
+four different facts. The onboarding report should state them separately instead of saying only “the
+capability is enabled.”
+
+### Enable an existing Extension during onboarding
+
+Project onboarding may also activate an optional Provider locally, but `connect` must not do that
+implicitly. The current `loopx-finance-value-discovery` package is a separately distributed,
+zero-permission Extension. An Agent can install it only when you already have a LoopX source checkout, or
+an equivalent provider source package, containing
+[`packages/loopx-finance-value-discovery`](https://github.com/huangruiteng/loopx/tree/main/packages/loopx-finance-value-discovery).
+
+Append this contract to the onboarding prompt:
+
+```text
+After project connection is complete, inspect whether loopx-finance-value-discovery is installed and
+enabled in the current environment.
+
+- Run loopx extension list --format json first. Do not infer activation from a directory.
+- If the Extension is installed and enabled, execute a read-only doctor probe; do not install it again.
+- If it is installed but disabled, explain that enable reruns doctor, then preview and execute enable.
+- If it is absent, first confirm that the provider source package and
+  packages/loopx-finance-value-discovery/extension.toml exist.
+- Changing the Python environment is a local environment write. Show the pip install, extension install,
+  and doctor commands and wait for my authority before execution.
+- Install the package into the same Python environment that runs `loopx`, and make the Provider entrypoint
+  visible on the current shell's `PATH`. Otherwise doctor should report `entrypoint_missing`; do not
+  bypass it.
+- If the provider source package is unavailable, stop and report that a release-only environment cannot
+  download or enable this Extension implicitly.
+- Do not describe it as a market-data collector or investment-advice capability. It only reduces frozen
+  public-safe evidence supplied by the caller into a bounded research packet. It performs no network,
+  account, trading, or continuous-monitoring action.
+- Report package installation, Extension enablement, doctor readiness, and one example run separately.
+```
+
+The equivalent manual flow is:
+
+```bash
+# 1. Observe activation state
+loopx extension list --format json
+
+# 2. Only when the provider source package exists and Python-environment writes are authorized
+python3 -m pip install ./packages/loopx-finance-value-discovery
+
+# When using a venv, activate it and confirm both commands resolve from that environment
+command -v loopx
+command -v loopx-finance-value-discovery
+
+# 3. Preview, then register and activate the installed Provider
+loopx extension install \
+  --manifest packages/loopx-finance-value-discovery/extension.toml \
+  --format json
+
+loopx extension install \
+  --manifest packages/loopx-finance-value-discovery/extension.toml \
+  --execute \
+  --format json
+
+# 4. Execute the read-only readiness probe
+loopx extension doctor \
+  loopx-finance-value-discovery \
+  --execute \
+  --format json
+```
+
+If `extension list` reports the Extension as installed with `enabled=false`, do not install it again:
+
+```bash
+loopx extension enable loopx-finance-value-discovery --format json
+loopx extension enable loopx-finance-value-discovery --execute --format json
+```
+
+Invocation also needs a `finance_value_discovery_input_v0` file. The onboarding report may say “Extension
+available” only after `extension list`, an executed doctor, and an example `extension run --execute` all
+succeed. The placement case in the next section explains why this package does not register a capability
+with the same name.
 
 ## Recovery paths
 

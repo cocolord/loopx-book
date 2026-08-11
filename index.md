@@ -1,31 +1,33 @@
----
-layout: home
+# LoopX Developer Book
 
-hero:
-  name: LoopX Book
-  text: 让 Agent 工作跨过一次会话
-  tagline: 面向外部开发者的中文教程：先建立控制面心智模型，再选择接入现有项目或开发 Extension。
-  actions:
-    - theme: brand
-      text: 从理论开始
-      link: /chapters/01-from-session-to-loop
-    - theme: alt
-      text: 接入现有项目
-      link: /chapters/05-connect-existing-project
-    - theme: alt
-      text: 开发 Extension
-      link: /chapters/08-extension-placement
+从控制面协议到可交付开发。
 
-features:
-  - title: 控制面基础
-    details: 用同一个任务比较普通 Agent 会话、Codex Goal 与 LoopX，理解三者如何组合。
-  - title: 项目接入
-    details: 把已有 Git 项目接入 LoopX，并分别从 Codex App 与 Codex CLI 启动。
-  - title: Extension 开发
-    details: 从官方 scaffold 开始，完成一个确定性、零权限的 standalone Extension。
-  - title: 可运行 Labs
-    details: 命令、schema 和失败恢复由独立 Labs 仓库承载，可重复验证。
----
+面向外部开发者的双语 Dev Book：先理解 LoopX 的状态、权限与 Turn，再选择接入现有项目或参与
+开发者贡献。
+
+[English edition](/loopx/docs/book/en/)
+
+<div class="grid cards" markdown>
+
+-   :material-map-marker-path: **控制面基础**
+
+    从 Session、Goal 和状态投影出发，理解工作图、权限、Turn、恢复与运行边界。
+
+    [:octicons-arrow-right-24: 从基础开始](chapters/01-from-session-to-loop.md)
+
+-   :material-source-repository: **项目接入**
+
+    把接入任务交给 Agent，验收 Goal、identity 与 Git 边界，再从 Codex App 或 Codex CLI 启动。
+
+    [:octicons-arrow-right-24: 接入现有项目](chapters/05-connect-existing-project.md)
+
+-   :material-source-branch: **开发者贡献**
+
+    按协议和 owner 选择 Control Plane、Capability、Provider、Host、Projection 或 Extension 等贡献路径。
+
+    [:octicons-arrow-right-24: 参与开发者贡献](chapters/source-protocol-map.md)
+
+</div>
 
 ## 这本书解决什么问题
 
@@ -38,25 +40,29 @@ features:
 
 - 当前任务只需要一次普通会话，还是需要持久 Goal；
 - 什么时候需要 LoopX 的项目级 Todo、Gate、Evidence、Quota 与恢复合同；
-- 如何把自己的项目接入 LoopX；
-- 如何在不绕过权限和生命周期的前提下交付 Extension。
+- 如何让 Agent 安全接入自己的项目，并验收它没有越过 Goal、identity、权限与 Git 边界；
+- 如何从协议与不变量出发定位贡献 owner、修改实现并组织验证；
+- 如何判断一项能力应进入 Core、Capability、Provider、Host、Projection，还是作为 Extension
+  独立交付。
 
-## 两条并列实践路径
+## 两条并列实践主线
 
 完成第一部分后，可以按需求选择：
 
-1. **接入现有项目：** 从[第五章](./chapters/05-connect-existing-project.md)开始；
-2. **开发 Extension：** 从[第八章](./chapters/08-extension-placement.md)开始。
+1. **接入现有项目：** 从[连接你的 Git 项目](./chapters/05-connect-existing-project.md)开始；
+2. **开发者贡献：** 从[开发者贡献地图与协议入口](./chapters/source-protocol-map.md)开始。
 
-两条路径互不依赖。项目接入不要求先写 Extension，Extension 开发也不要求修改 LoopX Kernel。
+两条主线共享同一套控制面基础，但互不依赖。项目接入不要求修改 LoopX；开发者贡献也不只属于
+Kernel 核心维护者。你可以沿 Control Plane、Capability、Provider、Host/Runner、
+Projection/Docs/fixtures 或 Extension/package lifecycle 中的一条边界完成贡献，其中
+Extension 只是可独立版本化和交付的一种路径。
 
 ## 当前验证基线
 
 - 正文格式：Markdown；
-- 站点生成器：VitePress；
+- 站点生成器：MkDocs Material；
 - 在线发布：GitHub Pages；
-- LoopX 行为验证基线：`0.4.0`；
-- 可运行练习：[loopx-book-labs](https://github.com/cocolord/loopx-book-labs)。
+- LoopX 发布锚点：`v0.4.4`。
 
-易变化的命令以 LoopX 官方文档和当前 `--help` 为准。本书负责教学顺序与心智模型，不成为
-另一份完整命令参考。
+协议解释以 LoopX 官方公开合同为事实源。易变化的命令仍以对应发布物、官方文档和当前
+`--help` 为准；本书负责教学顺序与心智模型，不成为另一份完整命令参考。

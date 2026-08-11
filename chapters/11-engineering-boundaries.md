@@ -1,16 +1,17 @@
 # 验证、兼容与安全
 
-一个教程只有在读者能复现、能判断成功，并且不会被引导跨过权限边界时才算完成。本章收束主书与
-Labs 的验证策略。
+一个 Dev Book 只有在读者能复现、能判断成功，并且不会被引导跨过权限边界时才算完成。本章收束
+项目接入与开发者贡献的验证策略。Extension 采用独立 lifecycle 检查，但仍属于开发者贡献的
+一种交付路径。
 
 ## 本章目标
 
 读完后，你应该能：
 
-- 为项目接入与 Extension 选择合适的验证层；
+- 为项目接入和不同类型的开发者贡献选择合适的验证层；
 - 区分版本兼容、readiness 与业务正确性；
 - 在公开提交前检查 private state；
-- 知道哪些内容应该留在官方文档、Labs 或项目事实源。
+- 知道哪些内容应该留在本书、官方文档或项目事实源。
 
 ## 四层验证
 
@@ -27,27 +28,30 @@ Labs 的验证策略。
 主书：
 
 ```bash
-npm ci
-npm run docs:build
+python3 -m pip install -r docs/requirements-docs.txt
+python3 examples/dev-book-publication-smoke.py
+mkdocs build --strict
 ```
 
-当前站点使用 VitePress `1.6.4`，并将兼容的 Vite 精确 override 到 `6.4.3`，以避开旧版
-dev server 的已知安全问题。依赖变更后运行：
+当前站点由 LoopX monorepo 的 MkDocs Material 发布链路构建。依赖范围以
+`docs/requirements-docs.txt` 为准；Book 导航、双语路由、官方首页入口和 Labs 排除边界由
+`examples/dev-book-publication-smoke.py` 守护。依赖变更后运行：
 
 ```bash
-npm audit --audit-level=moderate
+python3 -m pip check
+mkdocs build --strict
 ```
 
-override 是当前依赖图的一部分，不应在升级 VitePress 时盲目保留。先检查新版本的依赖与
-`@vitejs/plugin-vue` peer range，再通过 clean install、build 和 audit 决定是否删除或更新。
+不要只验证 Markdown 能被单独解析；还要验证它在 LoopX 的统一 `mkdocs.yaml` 导航、GitHub
+Pages base path 和首页 Learn 路径中可发现。
 
-Labs：
+书内 standalone Extension 示例：
 
 ```bash
 python3 -m venv .venv
 . .venv/bin/activate
 python3 -m pip install -e './standalone-extension[test]'
-./scripts/smoke.sh
+python3 -m pytest standalone-extension
 ```
 
 ### 2. Product-surface validation
@@ -74,7 +78,7 @@ readback。
 - Host activation 可观察；
 - quota 与 selected Todo 一致。
 
-Extension 至少验证：
+Extension/package lifecycle 贡献至少验证：
 
 - package entrypoint 可解析；
 - doctor 成功且无 effect；
@@ -84,11 +88,28 @@ Extension 至少验证：
 - invalid request fail closed；
 - upgrade 失败不破坏当前 revision。
 
+Control Plane、Capability、Provider、Host/Runner 或 Projection 贡献至少验证：
+
+- 预期决策来自独立审阅的 invariant，不来自当前实现输出；
+- unit/contract test 覆盖正例、反例与非法状态；
+- focused smoke 或 public-safe replay 经过真实协议链；
+- agent-facing output、scheduler 或 writeback 等受影响 consumer 得到对应检查；
+- Capability 有真实 caller、outcome contract 和 Domain State owner；
+- Provider 只返回 bounded observation/effect/readback，不获得 Goal authority；
+- Host/Runner 保持 typed request/result、独立 validation 与真实 runtime readback；
+- Projection/Dashboard 只消费 typed public-safe read model，不创建 browser write authority；
+- Docs/fixtures 绑定公开 contract 和维护触发器，不复制 private runtime state；
+- `loopx canary premerge --from-git-diff` 或等价风险集合覆盖跨 surface 变化；
+- PR 只包含同一协议结果所需的 product、docs 与 durable validation。
+
 ### 4. Outcome validation
 
 最后检查读者目标，而不只是命令退出码：
 
 - 项目接入后，Agent 是否真的从同一 canonical state 恢复？
+- Control Plane 或 Capability 改动是否保持 authority、precedence、replay 与 recovery invariant？
+- Provider/Host 是否通过真实 readback 和 independent validator 证明结果？
+- Projection、Docs 与 fixtures 是否仍指回同一事实源？
 - Extension 是否返回稳定、正确的 domain result？
 - 有权限的动作是否被拒绝或正确路由？
 - 文档是否让读者知道失败后怎么恢复？
@@ -121,12 +142,11 @@ loopx check \
   --scan-path chapters/
 ```
 
-Labs 还要扫描：
+如果你按照书内示例生成了可运行目录，也要扫描这些路径：
 
 ```bash
 loopx check \
   --scan-path README.md \
-  --scan-path project-onboarding/ \
   --scan-path standalone-extension/
 ```
 
@@ -145,9 +165,9 @@ loopx check \
 
 | 内容 | 放置位置 |
 | --- | --- |
-| 学习顺序、概念解释、恢复思路 | `loopx-book` |
-| 可运行代码、fixture、smoke | `loopx-book-labs` |
+| 学习顺序、概念解释、恢复思路与 scaffold 导读 | `loopx-book` |
 | 完整 CLI 参数、协议与 release behavior | LoopX 官方仓库 |
+| 产品代码、durable fixture 与 smoke | 对应 LoopX 或 Extension 源码仓库 |
 | 当前项目 Goal、Todo、Gate 与 evidence | 项目本地 LoopX state |
 | commit、PR、CI、外部资源事实 | 对应外部系统 |
 
@@ -161,8 +181,9 @@ loopx check \
 - `connect` / `start-goal`；
 - Host surface 名称；
 - Codex App heartbeat 与 Codex CLI Goal activation；
+- core protocol、state machine、bounded-context owner 与 quality catalog；
 - Extension manifest、doctor、run 与 lifecycle；
-- Labs smoke。
+- 书内步骤能否在当前官方 scaffold 与命令表面上复现。
 
 理论章节只在公开 contract 改变时更新。不要因为内部文件重构就重写用户心智模型。
 
@@ -170,24 +191,17 @@ loopx check \
 
 ### 主书
 
-- [ ] 首页第一屏说明读者、价值和两条路径；
+- [ ] 首页第一屏说明读者、价值和两条实践主线；
 - [ ] 中文为主，代码与必要术语保留英文；
-- [ ] 普通会话、Codex Goal 与 LoopX 的差异可由同一场景验证；
+- [ ] 六章基础覆盖 Session、Goal、state、work graph、Turn、recovery 与运行边界；
 - [ ] 项目接入覆盖 Codex App 与 Codex CLI；
-- [ ] Extension 教程对应真实 Labs；
-- [ ] `npm run docs:build` 成功；
+- [ ] 开发者贡献覆盖 Control Plane、Capability、Provider、Host/Runner、Projection/Docs/fixtures；
+- [ ] 贡献内容按 placement、协议、不变量和证据组织，而不是函数列表；
+- [ ] Extension 作为贡献子路径，示例基于当前官方 scaffold 可复现；
+- [ ] `python3 examples/dev-book-publication-smoke.py` 成功；
+- [ ] `mkdocs build --strict` 成功；
 - [ ] internal links 与 public boundary scan 通过；
 - [ ] 首页预览已由 owner 审阅。
-
-### Labs
-
-- [ ] 可从干净 venv 安装；
-- [ ] project-onboarding 可重置；
-- [ ] Git ignore smoke 通过；
-- [ ] request/response schema tests 通过；
-- [ ] managed install/doctor/run smoke 通过；
-- [ ] 没有凭据、私有状态或本机路径；
-- [ ] 主书与 Labs 双向链接有效。
 
 完成这些检查后，GitHub Pages workflow 才应从 `main` 发布站点。Pages 是展示面，不是内容或
 LoopX 状态的事实源。

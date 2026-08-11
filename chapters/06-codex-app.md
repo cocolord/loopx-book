@@ -9,7 +9,7 @@ Codex App 的职责是提供可见交互、Agent Turn 和 heartbeat automation�
 
 - Codex App 在正确的项目根目录工作；
 - `$loopx <task>` 或 `LoopX` command skill 识别了明确目标；
-- Agent 复用已有 Goal，或在规划后建立新 Goal 与 Todo；
+- Agent 复用精确 Goal 或在规划后建立新 Goal，并为新接入选择 fresh identity；
 - heartbeat automation 使用 LoopX 生成的 thin task body；
 - `quota should-run` 成为每一轮的执行 Gate；
 - App 报告 active state id、当前 user Gate、top Todo 和 next safe action。
@@ -41,13 +41,14 @@ Codex 当前通过 command-facade skill 暴露 LoopX；不要假设用户自定�
 明确任务的正常流程是：
 
 1. 保留用户的 task text；
-2. 读取或连接项目状态；
-3. 先形成有序 P0/P1/P2 计划；
-4. 按计划顺序写入 Todo；
-5. refresh state；
-6. 激活 App heartbeat；
-7. 运行 `quota should-run`；
-8. 只在 contract 允许时交付一个有界 segment。
+2. 读取或连接项目状态，并通过 selection gate 选择精确 `goal_id`；
+3. 为新接入注册 fresh `agent_id`，或按用户明确指令 takeover 已有 identity；
+4. 先形成有序 P0/P1/P2 计划；
+5. 按计划顺序写入 Todo；
+6. refresh state；
+7. 激活 App heartbeat；
+8. 运行 agent-scoped `quota should-run`；
+9. 只在 contract 允许时交付一个有界 segment。
 
 你不需要手工执行所有内部命令，但应该能从 Agent 报告中看到这些状态转换。仅得到一段自然语言
 计划，不等于项目状态已经建立；仅看到 guided packet，也不等于 heartbeat 已经安装。
@@ -85,7 +86,10 @@ validate -> writeback -> optional spend
 
 ```bash
 loopx status --goal-id <goal-id>
-loopx quota should-run --goal-id <goal-id> --codex-app
+loopx quota should-run \
+  --goal-id <goal-id> \
+  --agent-id <agent-id> \
+  --codex-app
 loopx history --goal-id <goal-id> --limit 10
 ```
 
@@ -96,6 +100,11 @@ loopx history --goal-id <goal-id> --limit 10
 - 是否有 `requires_user_action`；
 - `scheduler_hint` 是否适用于 `codex_app`；
 - 最新 run 是否包含验证和 writeback，而不只是 status poll。
+
+如果 `scheduler_hint.codex_app.stateful_backoff.apply_needed=true`，还要确认 App 实际应用了
+`recommended_rrule`，随后执行 packet 提供的完整 `ack_hint.cli_args`。仅看到 recommendation 或
+本地 ACK ledger 都不足以证明 cadence 已生效；实际 Host RRULE readback 若报告 drift，必须按当前
+hint 修复。
 
 ## 5. 在 App 与 CLI 之间切换
 
@@ -109,6 +118,10 @@ Codex CLI Goal ---┘
 
 不要让 App 和 CLI 各自创建同名但独立的 Goal。切换前先确认没有两个 Agent 同时 claim 同一 Todo；
 有 hard lease 的工作必须等 lease 释放或按生命周期显式移交。
+
+切换 Host 也不必更换 Agent identity：如果这是同一 peer 的连续执行，应显式携带原 `agent_id`；
+如果是新的 peer，则注册 fresh id 并完成 claim/handoff。Host 变化与 Agent takeover 是两个独立
+决定。
 
 ## 恢复路径
 

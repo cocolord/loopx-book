@@ -1,7 +1,7 @@
 # 创建 standalone Extension
 
-本章从 LoopX 官方 scaffold 创建 `loopx-text-stats`。完整代码位于
-[loopx-book-labs/standalone-extension](https://github.com/cocolord/loopx-book-labs/tree/main/standalone-extension)。
+本章从 LoopX 官方 scaffold 创建 `loopx-text-stats`。官方 scaffold 提供完整可运行基线；本章
+给出需要收窄的 manifest、request/response 合同、核心函数与验证步骤，不依赖配套练习仓库。
 
 ## 成功标准
 
@@ -17,7 +17,7 @@
 
 ## 1. 生成官方 scaffold
 
-从 Labs 仓库根目录运行：
+从一个准备存放示例的工作目录运行：
 
 ```bash
 loopx extension init loopx-text-stats \
@@ -52,7 +52,7 @@ Capability authority。
 
 ## 2. 读取 manifest
 
-Labs 中的 manifest：
+scaffold 生成并经本章收窄后的 manifest：
 
 ```toml
 schema_version = "loopx_extension_manifest_v0"
@@ -112,7 +112,7 @@ provider 必须拒绝，而不是擅自把 `path` 理解为文件读取授权。
 
 ## 4. 实现纯计算
 
-Labs 中的核心函数：
+示例的核心函数：
 
 ```python
 def analyze_text(text: str) -> dict[str, int]:

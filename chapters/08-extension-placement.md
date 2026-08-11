@@ -36,6 +36,92 @@ Extension: package and lifecycle
 
 一个 Capability 也可以由 LoopX core 内置 Provider 实现，不需要 Extension。
 
+## 案例：财经发现 Extension
+
+当前 `loopx-finance-value-discovery` 是一个容易被名称误导的真实案例。它处理财经研究 packet，
+但当前 manifest 没有 `[[provides]]` 或 `[[implements]]`，也不会向 Capability catalog 注册
+`finance-value-discovery`。
+
+官方 placement 指南把“多个财经数据或研究 Provider 共享 outcome contract”作为未来
+`finance-value-discovery` Capability 的合理方向；这不等于当前 catalog 已经提供该 Capability。
+本章以下判断以当前 manifest、catalog readback 和 managed runtime 为准。
+
+它的 placement rationale 是：
+
+```text
+capability_id: none
+provider_id: loopx-finance-value-discovery
+origin: extension
+placement: separately activated package
+reason: deterministic reducer over caller-supplied frozen public-safe evidence;
+        independent package and lifecycle; no provider-neutral caller contract yet
+```
+
+为什么不是 Capability：
+
+- 公开调用合同目前是这个 Extension 自己的 `finance_value_discovery_extension_v0`；
+- input 是调用方已经冻结的 `finance_value_discovery_input_v0`，不是“帮我发现投资机会”这类宽泛请求；
+- provider 只输出有界研究 packet；
+- 没有多个可替换 Provider 共享的 caller outcome、resolver 和 domain policy；
+- 当前 Capability catalog 不承诺 `finance-value-discovery`。
+
+为什么适合作为 Extension：
+
+- package、版本、doctor、启停和 upgrade 可以独立于 LoopX core 管理；
+- manifest 与 runtime 的 permissions 都为空；
+- reducer 不自动拉取行情，不读取账户或持仓，不发起交易，也不产生持续监控；
+- 同一份 frozen public-safe evidence 可以得到确定性结果；
+- generic `extension run` 不会绕过任何外部 effect authority。
+
+它的当前边界可以画成：
+
+```text
+public evidence collector or human review
+  -> frozen finance_value_discovery_input_v0
+  -> loopx-finance-value-discovery Extension
+  -> bounded finance_value_discovery_packet_v0
+  -> human / Goal decides whether a successor is justified
+```
+
+安装、启用和运行是三种不同证明：
+
+```bash
+# package entrypoint 进入当前 Python environment
+python3 -m pip install ./packages/loopx-finance-value-discovery
+
+# extension runtime 记录并激活经过 doctor 的 manifest revision
+loopx extension install \
+  --manifest packages/loopx-finance-value-discovery/extension.toml \
+  --execute \
+  --format json
+
+# managed runtime 处理一个已经冻结的公开证据输入
+loopx extension run loopx-finance-value-discovery \
+  --input-json packages/loopx-finance-value-discovery/examples/paypal-debeta-discovery.json \
+  --execute \
+  --format json
+```
+
+这些命令要求 provider 源码包可用；它当前不是 bundled Extension，LoopX 不会替用户下载 package。
+`extension list` 证明 activation state，executed doctor 证明当前 revision 的 readiness，示例 run
+证明 request/response contract。三者不能互相替代。
+
+package 还必须安装在运行 `loopx` 的同一 Python environment，并让
+`loopx-finance-value-discovery` entrypoint 出现在当前 `PATH`。只调用某个 venv 里的 `loopx`
+绝对路径、却没有让同一 venv 的 provider entrypoint 可解析时，doctor 会返回
+`entrypoint_missing`；这是正确的 fail-closed 行为。
+
+### 什么时候应升级成 Capability + Provider
+
+如果将来 LoopX 要向多个财经数据或研究 Provider 暴露稳定、provider-neutral 的调用结果，就应先
+定义 Capability contract，例如统一的 input、evidence freshness、authority、failure、readback
+和 successor policy。之后这个 package 可以通过 `[[implements]]` 成为其中一个 Extension
+Provider。
+
+不能反过来因为 package 名称含有“财经发现”，就先注册一个没有真实 caller 和 resolver 的
+Capability。数据采集也不应偷偷进入这个零权限 reducer；公开市场、财报和新闻采集需要自己的
+Provider 边界、来源 freshness、license 与 credential Gate。
+
 ## 四个候选位置
 
 ### 1. 项目内部 helper
@@ -171,5 +257,10 @@ generic runner 要求 manifest 和 runtime 的权限都为空。发消息、写�
 | kind | standalone |
 | permissions | `[]` |
 | managed entrypoint | `loopx extension run` |
+
+如果你要设计的不只是 standalone package，而是 Explore、Domain State、Capability Pack、
+multi-agent preset、Provider 或 presentation 的组合，继续阅读
+[Control-Plane Course 第 9 讲](/loopx/docs/development/control-plane-course/09-extension-layer/)。
+它解释这些扩展面怎样复用 Kernel，而不是创建第二套 Goal、Todo、Quota 或 Scheduler。
 
 下一章会从官方 `extension init` 生成这套结构，再只修改 request/response domain contract。
